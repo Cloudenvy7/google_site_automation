@@ -568,11 +568,30 @@ this commit — it existed only as untracked files in a worktree.
 
 ### Open — nothing here is done
 
-1. **`build_page.py` paragraph path is broken.** Layout blocks fill correctly
-   after the DOM-index fix; a plain `Text box` insert reports
-   `ONLY_0_EMPTY_FOR_1_TEXTS` — it likely lands as its own section wrapper,
-   outside the new-index range. **Layouts work, paragraphs do not**, and
-   `paragraph` is the most common block type (40 of 100 on JBL).
+1. ~~**`build_page.py` paragraph path is broken.**~~ **DIAGNOSED AND FIXED
+   2026-09-07 by testing on the live sites.** The symptom was
+   `ONLY_0_EMPTY_FOR_1_TEXTS`; the guessed cause ("it lands as its own section
+   wrapper") was wrong. **The real cause: `cells_from(before_count)` assumed a
+   new block appends at the end of the DOM. It does not.** Sites inserts at the
+   current insertion point, and when `append_point` misses the bottom the block
+   lands *above* existing content — observed on a live page with 21 cells, where
+   a two-column block took indices 1–6 and pushed the previous block's cells
+   from 10–14 down to 15–20. Reading "from the old count onward" therefore
+   addressed *other blocks' cells*, which read as non-empty, so the fill was
+   refused. **Nothing was corrupted: the occupancy check refused to write into
+   occupied cells.** That refusal is the only reason this surfaced as a finding
+   rather than a fourth scrambled page. Fixed in `wireframe_build.py` —
+   `cell_signatures()` + `inserted_range()` locate the new block by diffing the
+   page across the insert (common prefix, common suffix, remainder). Verified on
+   both live sites: a block landing at indices 7–9 with 21 cells present was
+   targeted and filled correctly.
+
+   **A second, unrelated break found in the same pass:** the layout tile's
+   aria-label changed from `Image and caption` to **`Add layout: Image and
+   caption`**, so every `insert_layout()` call failed with a bare TIMEOUT.
+   Google owns this DOM and renames things; `build_page.insert_layout` now tries
+   the current form then the old one, and `probe_controls()` exists precisely so
+   the next rename is rediscovered rather than guessed.
 2. **GATE 6 still refuses on HopeLink** — 53 P1/P2 files are read but their
    `extracted_to` is empty. Content indexed, not landed in tabs. The Charter and
    Page Plan cannot be trusted until it is. This is the Landing Rule working.

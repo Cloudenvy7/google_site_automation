@@ -109,12 +109,24 @@ def fill_layout_now(ws, text):
 
 
 def insert_layout(ws, label):
-    """Layout tiles are divs, not menuitems, so they need their own lookup."""
+    """Layout tiles are divs, not menuitems, so they need their own lookup.
+
+    The tile's aria-label is NOT stable. On 2026-09-07 a live probe found
+    "Add layout: Image and caption" where this code had looked for
+    "Image and caption", and every insert failed with a bare TIMEOUT. Google
+    owns this DOM and renames things. Try the current form first, then the old
+    one, and probe with probe_controls() when both miss rather than guessing a
+    third spelling.
+    """
     before = cells(ws)
     if not S.click_control(ws, "Insert", exact=True):
         return False, before, before
     time.sleep(2)
-    t = S.wait_for_control(ws, label, exact=True, attempts=8, role="div")
+    t = None
+    for candidate in (f"Add layout: {label}", label):
+        t = S.wait_for_control(ws, candidate, exact=True, attempts=5, role="div")
+        if t:
+            break
     if not t:
         return False, before, before
     S.click_at(ws, t["x"], t["y"])

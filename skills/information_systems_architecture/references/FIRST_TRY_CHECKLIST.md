@@ -36,9 +36,18 @@ Every line is something that cost at least one rebuild. Read before building.
 - [ ] **Assert the page id from the live URL before any destructive step.** A
       click returning true is not evidence the click worked. This is what
       deleted a finished Home page.
-- [ ] Address cells by **DOM index scoped to the block just placed** — record the
-      count before insert; the new block owns everything from that count on.
-      "First empty cell on the page" wanders.
+- [ ] Address cells by **diffing the cell list across the insert** — common
+      prefix, common suffix, and what lies between is what the insert created.
+      **Do NOT use "everything after the old count."** Verified false on a live
+      page 2026-09-07: with 21 cells present, a block landed at indices 1–6 and
+      pushed existing content down. "First empty cell on the page" wanders too.
+- [ ] **`append_point` is not guaranteed to reach the bottom.** Sites inserts at
+      the current insertion point, so a missed append puts the new block ABOVE
+      existing content. Never infer position; diff for it.
+- [ ] **Re-probe the layout tile's aria-label before trusting it.** It changed
+      from `Image and caption` to `Add layout: Image and caption` and every
+      insert failed with a bare TIMEOUT. Google owns this DOM. Use
+      `probe_controls()` rather than guessing a spelling.
 - [ ] Verify text through its `contenteditable`, not the container. A new text
       box renders its style picker inside the cell, so a naive emptiness test
       reads "Normal text / Title / Heading" and skips the box.

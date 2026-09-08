@@ -1,9 +1,25 @@
 """Translate a PAGE_WIREFRAME row into placed Site blocks, deterministically.
 
-Identity is GEOMETRIC, not attribute-based. Sites re-renders cells as the page
-grows, so a data-* tag stamped before an insert is gone afterwards and old cells
-look new -- which sent two paragraphs into one cell. Blocks are always appended,
-so the new block owns exactly the cells below the previous bottom edge.
+Identity is a DIFF of the cell list across the insert. Sites re-renders cells
+as the page grows, so a data-* tag stamped before an insert is gone afterwards
+and old cells look new -- which sent two paragraphs into one cell.
+
+CORRECTION 2026-09-07, found by testing on a live page. This file used to say
+"blocks are always appended, so the new block owns the cells from the old count
+onward." That is FALSE. Insertion goes to the current insertion point, and when
+append_point does not land at the bottom the block is inserted ABOVE existing
+content -- observed on a real page, where a two-column block placed at DOM
+indices 1..6 and pushed the previous block's cells from 10..14 down to 15..20.
+Reading "from the old count onward" then addresses OTHER BLOCKS' cells.
+
+It did not corrupt anything, because the occupancy check refused to write into
+non-empty cells and returned ONLY_0_EMPTY_FOR_4_TEXTS. That refusal is the only
+reason this was a finding rather than another scrambled page -- and it is also
+what the "paragraph path is broken" symptom actually was.
+
+So the new block's cells are found by diffing the cell signature list before and
+after the insert: common prefix, common suffix, and whatever lies between is
+what the insert created. That holds wherever Sites chose to put it.
 
 The failure this replaces: filling used a global "first empty caption" search.
 Every write verified against the cell it wrote to, and the page still came out
@@ -71,6 +87,42 @@ def cells_from(ws, start_index):
         return []
 
 
+def cell_signatures(ws):
+    """(label, text) per gridcell, in DOM order -- the input to the insert diff."""
+    raw = S.eval_js(ws, f"""
+    (function(){{
+      var CELLTEXT={CELLTEXT};
+      var all=document.querySelectorAll('[role="gridcell"]');
+      var o=[];
+      for(var i=0;i<all.length;i++){{
+        o.push([all[i].getAttribute('aria-label')||'', CELLTEXT(all[i])]);
+      }}
+      return JSON.stringify(o);
+    }})()""")
+    try:
+        return [tuple(x) for x in json.loads(raw or "[]")]
+    except (TypeError, ValueError):
+        return []
+
+
+def inserted_range(before, after):
+    """Indices the insert created, by common-prefix/common-suffix diff.
+
+    Do NOT assume the block landed at the end. It lands at the insertion point,
+    which is above existing content whenever append_point misses.
+    """
+    n, m = len(before), len(after)
+    if m <= n:
+        return []
+    p = 0
+    while p < n and before[p] == after[p]:
+        p += 1
+    sfx = 0
+    while sfx < (n - p) and before[n - 1 - sfx] == after[m - 1 - sfx]:
+        sfx += 1
+    return list(range(p, m - sfx))
+
+
 def fill_index(ws, i, text):
     """Fill cell i (DOM order). Scrolls it into view and re-reads its position."""
     pt = S.eval_js(ws, f"""
@@ -108,20 +160,33 @@ def fill_index(ws, i, text):
 
 
 def build_section(ws, block_type, cols, insert_fn):
-    """Place one block and fill only the cells it created, addressed by DOM index."""
-    before = cell_count(ws)
+    """Place one block and fill only the cells that insert created.
+
+    The cells are located by diffing the page before and after, never by
+    "everything after the old count" -- see the correction in the module
+    docstring. Fill order is COLUMN-MAJOR: entire left column, then the next.
+    """
+    before = cell_signatures(ws)
     if not insert_fn(ws):
         return f"{block_type}:INSERT_FAILED", []
     time.sleep(3.0)
 
-    fresh = cells_from(ws, before)
+    after = cell_signatures(ws)
+    idx = inserted_range(before, after)
+    if not idx:
+        return f"{block_type}:NO_NEW_CELLS", []
+
+    geom = {c["i"]: c for c in cells_from(ws, 0)}
+    fresh = [geom[i] for i in idx if i in geom]
+
     texts = [c for c in cols if c and not str(c).startswith("[")]
     targets = [c for c in fresh if c["label"] == "Text" and c["empty"]]
 
     if not texts:
         return f"{block_type}:PLACED", fresh
     if len(targets) < len(texts):
-        return f"{block_type}:ONLY_{len(targets)}_EMPTY_FOR_{len(texts)}_TEXTS", fresh
+        return (f"{block_type}:ONLY_{len(targets)}_EMPTY_FOR_{len(texts)}_TEXTS"
+                f"@{idx[0]}-{idx[-1]}", fresh)
 
     out = []
     for cell, txt in zip(targets, texts):
