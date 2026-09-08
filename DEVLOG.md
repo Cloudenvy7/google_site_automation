@@ -592,6 +592,19 @@ this commit — it existed only as untracked files in a worktree.
    Google owns this DOM and renames things; `build_page.insert_layout` now tries
    the current form then the old one, and `probe_controls()` exists precisely so
    the next rename is rediscovered rather than guessed.
+
+   **Both block paths are now proven on live sites (2026-09-07).** `paragraph`
+   — the type reported broken — placed and filled at DOM index 5 on a page with
+   8 cells, landing *between* two existing layout blocks and disturbing
+   neither. `layout_media_text` and the two-column layout likewise. Verified by
+   independent read-back of every cell, not by the builder's own status string.
+
+10. **The Cycle v0.2 carries one stale status line.** It still reads *"Status:
+   RUN ONCE (HopeLink, 85 rows) — spec and reusable script NOT YET WRITTEN"* for
+   Stage 1. Both exist: Indexer Spec v2.0 and `indexer_v3.py`. Flagged to Andrew
+   on 2026-09-01 and again 2026-09-07; **he has not ruled, so it is left as
+   written.** Correcting a doc in his Drive is his call, and per "never
+   overwrite" the fix is an appended correction, not an edit to the line.
 2. **GATE 6 still refuses on HopeLink** — 53 P1/P2 files are read but their
    `extracted_to` is empty. Content indexed, not landed in tabs. The Charter and
    Page Plan cannot be trusted until it is. This is the Landing Rule working.
