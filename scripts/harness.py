@@ -20,6 +20,7 @@ a Refusal is a finding for the human, not an error to work around.
 """
 
 import json
+import os
 import re
 import time
 
@@ -381,8 +382,101 @@ def _norm(v):
     return re.sub(r"[^a-z0-9]+", " ", str(v).lower()).strip()
 
 
+# --------------------------------------------------------------------------
+# PREFLIGHT STAMP -- the bridge between the gates and the PreToolUse hook.
+# --------------------------------------------------------------------------
+
+ADVISOR_HOME = os.environ.get("ADVISOR_OS_HOME", os.path.expanduser("~/.advisor_os"))
+STAMP_PATH = os.path.join(ADVISOR_HOME, "preflight.json")
+STAMP_MAX_AGE_H = 12
+
+
+def _tabs_from_sheet(catalogue_id):
+    """Read every tab of a catalogue into {tab: rows}. Only the preflight talks
+    to Google; the hook reads the stamp it leaves behind and stays offline."""
+    import google.oauth2.service_account as sa
+    from googleapiclient.discovery import build
+    key = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", os.environ.get("ADVISOR_SA",
+              "/home/tyler/Projects/Blackfox Studios/service_account.json"))
+    c = sa.Credentials.from_service_account_file(
+        key, scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
+    sh = build("sheets", "v4", credentials=c).spreadsheets()
+    titles = [x["properties"]["title"] for x in sh.get(spreadsheetId=catalogue_id).execute()["sheets"]]
+    out = {}
+    for t in titles:
+        out[t] = sh.values().get(spreadsheetId=catalogue_id, range=f"'{t}'").execute().get("values", [])
+    return out
+
+
+def write_stamp(catalogue_id, site_id, verdict, problems, meta):
+    os.makedirs(ADVISOR_HOME, exist_ok=True)
+    stamp = {"catalogue_id": catalogue_id, "site_id": site_id, "verdict": verdict,
+             "problems": problems, "stamped_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+             "epoch": int(time.time()), **meta}
+    with open(STAMP_PATH, "w") as fh:
+        json.dump(stamp, fh, indent=1)
+    return stamp
+
+
+def preflight_stamp(catalogue_id, site_id):
+    """Run the Stage-0 checks and the ratification gates against a live
+    catalogue, and leave a stamp the Site-build hook can read.
+
+    WHY A STAMP. A PreToolUse hook fires on every Bash call and must be fast and
+    offline. It cannot read a spreadsheet each time, and it must not be the
+    thing that decides ratification -- that is a human act recorded in the
+    catalogue. So the preflight reads the catalogue ONCE, applies the gates, and
+    writes what it found. The hook then answers one question: is there a fresh
+    stamp, for this site, that says RATIFIED? Anything else is a refusal.
+
+    The stamp expires (STAMP_MAX_AGE_H) so a ratification cannot be inherited
+    across days without being re-checked against the sheet.
+    """
+    tabs = _tabs_from_sheet(catalogue_id)
+    problems, meta = [], {}
+    checks = [
+        ("STAGE 0", lambda: stage_0_instantiated(tabs)),
+        ("00_HARNESS", lambda: harness_checklist(tabs)),
+        ("GATE 1", lambda: gate_1_architecture(tabs.get("00_README", []))),
+    ]
+    def keyed(rows):
+        """gate_5 reads dict rows; a sheet tab arrives as lists. Key by header.
+        (First live preflight reported GATE 5 'could not evaluate' for this.)"""
+        if not rows:
+            return []
+        hdr = [str(h).strip() for h in rows[0]]
+        return [dict(zip(hdr, r)) for r in rows[1:] if any(str(c).strip() for c in r)]
+    for t in ("CHARTER", "MANIFEST", "PAGE_PLAN"):
+        checks.append((f"GATE 5 {t}", lambda t=t: gate_5_ratified(keyed(tabs.get(t, [])), t)))
+    for name, fn in checks:
+        try:
+            fn()
+        except Refusal as e:
+            problems.append(str(e))
+        except Exception as e:
+            problems.append(f"{name}: could not evaluate ({type(e).__name__}: {e})")
+    kv = {str(r[0]).strip().lower(): (r[1].strip() if len(r) > 1 else "")
+          for r in tabs.get("00_README", []) if r}
+    meta = {"site_name": kv.get("site_name", ""), "isa_status": kv.get("isa_status", ""),
+            "isa_doc_id": kv.get("isa_doc_id", ""), "tabs": sorted(tabs.keys())}
+    verdict = "RATIFIED" if not problems else "REFUSED"
+    stamp = write_stamp(catalogue_id, site_id, verdict, problems, meta)
+    print(f"preflight : {verdict}   catalogue {catalogue_id}   site {site_id}")
+    print(f"stamp     : {STAMP_PATH}  (valid {STAMP_MAX_AGE_H}h)")
+    for p in problems:
+        print(f"   - {p[:160]}")
+    if problems:
+        print("\nThe Site-build hook will refuse builds for this site until these are resolved\n"
+              "in the catalogue and preflight is re-run. Ratification is a human act.")
+    return stamp
+
+
 if __name__ == "__main__":
     import sys
+    if len(sys.argv) >= 4 and sys.argv[1] == "preflight":
+        st = preflight_stamp(sys.argv[2], sys.argv[3])
+        sys.exit(0 if st["verdict"] == "RATIFIED" else 2)
     print(__doc__)
     print("Gates:", [n for n in dir() if n.startswith("gate_")])
     print("Guards:", [n for n in dir() if n.startswith("guard_")])
+    print("\nusage: harness.py preflight <catalogue_sheet_id> <site_id>")

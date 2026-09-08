@@ -6,6 +6,8 @@ PY="${PYTHON:-python3}"
 [ -x "/home/tyler/Projects/Blackfox Studios/.venv/bin/python" ] && PY="/home/tyler/Projects/Blackfox Studios/.venv/bin/python"
 echo "== coverage unit tests =="
 "$PY" "$HERE/test_coverage_unit.py" || exit 1
+echo; echo "== site-build gate (hook) tests =="
+"$PY" "$HERE/test_site_build_gate.py" || exit 1
 if [ "${1:-}" = "--with-model" ]; then
   echo; echo "== canary eval (model: ${2:-haiku}) =="
   "$PY" "$HERE/canary_partial_read.py" "${2:-haiku}" || exit 1

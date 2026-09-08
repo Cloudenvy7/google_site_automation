@@ -14,6 +14,15 @@ Every line is something that cost at least one rebuild. Read before building.
       failure that shipped a 15-person team page with 6 people on it.
 - [ ] No dependent row carries `UNKNOWN` / `NOT ESTABLISHED` / `TBD` /
       `NOT RECORDED` without a human-signed waiver.
+- [ ] **Run `harness.py preflight <catalogue> <site>` and read what it says.** The
+      Site-build hook refuses the door without a fresh `RATIFIED` stamp (< 12h).
+      Preflight does not decide ratification; it checks a human recorded it.
+- [ ] **Do not write to a Site from an inline script.** The hook refuses it, in
+      every syntax. If you need a scratch build, ask the human for a waiver file
+      naming the site; never write one yourself — `waived_by` is a person.
+- [ ] **Edit files with Edit/Write; run things with Bash.** The hook reads Bash
+      command text. A Bash heredoc that *patches* the hook, or a test that quotes
+      a Site write, will be refused — the Edit tool is the right tool for that.
 
 ## Gathering information
 

@@ -6,7 +6,7 @@
 # Enable once per clone:   git config core.hooksPath .githooks
 set -u
 changed="$(git diff --cached --name-only)"
-if echo "$changed" | grep -qE '(indexer_v3\.py|coverage\.py|harness\.py|read_drive_file\.py|/evals/|/skills/|CLAUDE\.md)'; then
+if echo "$changed" | grep -qE '(indexer_v3\.py|coverage\.py|harness\.py|read_drive_file\.py|/evals/|/skills/|CLAUDE\.md|\.claude/hooks/|\.claude/settings\.json)'; then
   echo "pre-commit: agent-steering files changed -> running coverage unit tests"
   root="$(git rev-parse --show-toplevel)"
   for r in "$root/.agents/evals/run.sh" "$root/evals/run.sh"; do

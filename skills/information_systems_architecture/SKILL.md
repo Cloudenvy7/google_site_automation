@@ -147,6 +147,15 @@ stage_0_instantiated · harness_checklist · gate_1_architecture
 gate_2_landing · gate_3_flags · gate_4_charter · gate_5_ratified
 ```
 
+**The hook makes this deterministic.** `.claude/hooks/site_build_gate.py`
+fires on every Bash call. The Sites editor is reachable only through the door
+(`build_from_wireframe.py` / `run_wireframe.py`), and the door opens only
+after `harness.py preflight <catalogue> <site>` has left a fresh `RATIFIED`
+stamp. Inline writes in any syntax, `clear_page` outside the door, and stale or
+refused stamps are blocked; publish asks the human. Every decision is logged
+to `~/.advisor_os/hook_log.jsonl`. A blocked command is not a bug to code
+around — it is the harness working.
+
 A `Refusal` is a finding for the human, not an error to route around. An agent
 that works around a refusal has reproduced the failure the refusal prevents.
 

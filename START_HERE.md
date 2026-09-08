@@ -45,13 +45,47 @@ an indexing agent reporting a file read when it read part of it.
 
 | | |
 |---|---|
-| `evals/run.sh` | Deterministic tests, seconds, no model. Runs from `.githooks/pre-commit` on any change to the indexer, harness, skills or `CLAUDE.md`. |
+| `evals/run.sh` | Deterministic tests — coverage (40 checks) and the Site-build hook (35 cases) — seconds, no model. Runs from `.githooks/pre-commit` on any change to the indexer, harness, hooks, skills or `CLAUDE.md`. |
 | `evals/run.sh --with-model haiku` | The **canary**: a synthetic fact at 93% of a 90k-char file must reach the row, and a deliberately partial read must be refused by GUARD 9. Costs real tokens. |
 | `evals/history.jsonl` | One line per model run — commit, model, tokens, cost, pass/fail — so a regression can be dated. |
 | `evals/baseline.json` | Counts that may never rise (pattern from ruvnet/ruflo). |
 | `.github/workflows/agent-evals.yml` | Unit on every PR; canary nightly when `ANTHROPIC_API_KEY` is set. |
 
 Enable the pre-commit hook once per clone: `git config core.hooksPath .githooks`.
+
+## The hooks — the deterministic layer
+
+`.claude/settings.json` + `.claude/hooks/site_build_gate.py`. Skills are
+advisory; `harness.py` runs only if the code calls it. **A hook runs on every
+Bash call regardless of what code the agent wrote.** Stdlib only, offline, fast.
+
+| Rule | What happens | The failure behind it |
+|---|---|---|
+| **Use the door** | Any executing command that reaches the Sites editor is refused unless it goes through the door — `build_from_wireframe.py` / `run_wireframe.py` — the path that enforces the Landing Rule and asserts the page id. Inline writes, in any syntax, are refused. | Content typed from a script is content that is not a cell. |
+| **Ratified first** | The door opens only on a fresh (< 12h) `preflight` stamp that says `RATIFIED`, for that site. | Build proposed twice before the HopeLink ISA existed. |
+| **No blind delete** | `clear_page` outside the door is refused, even under a waiver. | 2026-08-31: a page click silently missed and `clear_page` destroyed a finished Home. |
+| **Publish asks** | Publishing prompts the human. | Outward-facing. |
+| **Waivers are human acts** | `~/.advisor_os/waivers/<name>.json` with `waived_by`, `site_id`, `expires`, `reason` permits builds on that one named site. | Scratch testing needs a door too — one a human opened. |
+| **Every decision is logged** | `~/.advisor_os/hook_log.jsonl` — allow / block / ask, with the command's hash. | The auditor reads the ledger, not the summary. |
+
+Read-only probes (`probe_controls`, `whoami`, `list_pages`, `catalog_site.py`)
+stay allowed so diagnosis is possible. `eval_js` counts as a write.
+
+**Before a build:**
+```
+python scripts/harness.py preflight <catalogue_sheet_id> <site_id>
+```
+It reads the catalogue once, applies STAGE 0 / `00_HARNESS` / GATE 1 / GATE 5,
+and leaves the stamp. It does not decide ratification — that is recorded in the
+catalogue by a human — it only checks it was done.
+
+**Two limits, stated plainly.** The hook reads command text, not the DOM. And
+on a client's own Pro account it lives in the project's `settings.json`, which
+a human can edit: it stops an agent from drifting, not a person from deciding.
+
+**One working rule that fell out of building it:** edit files with Edit/Write,
+run things with Bash. The hook matches only Bash, so a heredoc that patches the
+hook — or a test that quotes a Site write — is refused as if it were the write.
 
 ## The catalogue template
 

@@ -11,6 +11,108 @@ than no log because it still reads as authoritative.
 
 ________________
 
+## 2026-09-07/08 — The deterministic layer for Site builds: `PreToolUse` hook, preflight stamp, and three failures the hook found in its own author
+
+Author: Claude Code (claude-fable-5-1) + Andrew Powers. Andrew, 2026-09-07:
+*"okay go to the next part"* — the hooks build agreed in principle earlier that
+day, after the playbook review named the gap: *a skill is advisory; nothing
+forces a session to comply with it.*
+
+### What it enforces, and the failure behind each
+
+`.claude/settings.json` + `.claude/hooks/site_build_gate.py` (stdlib, offline,
+< 50 ms). Fires on **every** Bash call, whether or not the agent chose to call
+the harness — which is the point. `harness.py` runs only if code calls it;
+this runs regardless.
+
+| Rule | Failure it answers |
+|---|---|
+| **Use the door.** An executing command that reaches the Sites editor is refused unless it goes through `build_from_wireframe.py` / `run_wireframe.py` — the path that enforces the Landing Rule (GATE 2) and asserts the page id (GUARD 1). | 2026-09-07: placement-test blocks typed by hand from an inline script. Harmless that day; the exact path by which content that is not a cell reaches a page. |
+| **Ratified first.** The door opens only on a fresh (< 12 h) stamp from `harness.py preflight <catalogue> <site>` that says `RATIFIED`, for that site. | Build proposed twice before the HopeLink ISA existed. |
+| **No blind delete.** `clear_page` outside the door is refused, even under a waiver. | 2026-08-31: a page click silently missed; `clear_page` destroyed a finished Home. |
+| **Publish asks.** `permissionDecision: ask`. | Outward-facing. |
+| **Waivers are human acts.** `~/.advisor_os/waivers/*.json` with `waived_by`, `site_id`, `expires`, `reason`; one named site; every use logged. | Scratch testing needs a door too — one a human opened. |
+| **Every decision logged** to `~/.advisor_os/hook_log.jsonl`. | The auditor reads the ledger, not the summary. |
+
+`permissions.deny` also keeps `service_account.json` and `.env*` out of the
+agent's file tools — the playbook's cheapest control.
+
+**The preflight is the bridge.** A hook must be fast and offline and must not
+be the thing that decides ratification. So `harness.py preflight` reads the
+catalogue once, applies STAGE 0 / `00_HARNESS` / GATE 1 / GATE 5, and leaves a
+stamp; the hook answers one question — fresh, this site, RATIFIED? — and
+refuses anything else. Run for real against the HopeLink catalogue: **REFUSED,
+truthfully** — no `00_HARNESS` tab (built before the harness existed), ISA
+`DRAFT`, and no `ratified_by` on CHARTER, MANIFEST or PAGE_PLAN. Its first run
+reported GATE 5 as *"could not evaluate"* because `gate_5_ratified` reads dict
+rows and a sheet arrives as lists; fixed by keying rows on the header.
+
+### Verified
+
+- **35 hook cases + 40 coverage checks, all green**, in the pre-commit hook and
+  in `evals/run.sh`, from this repo's own layout.
+- **A fresh `claude -p` session tried the ad-hoc write and was refused** — 2
+  turns, $0.037, and a `BLOCK` in the ledger at 23:46:50 carrying the exact
+  command. The proof is the ledger line, not the session's report.
+
+### Three failures the hook found in its own author, in order
+
+**1. It refused a documentation edit.** The first live block was a Bash heredoc
+that merely *mentioned* `build_from_wireframe.py`. The matcher read text and
+treated a mention as an invocation. Fix: a command that cannot execute code
+cannot reach the editor (`cat >`, `cp`, `git` pass); invocations must sit at a
+command boundary and may not begin with a quote or backtick.
+
+**2. It refused the Bash call that tried to fix it.** Chicken-and-egg — the
+patch script's text contained the tokens. The fix went in through the Edit
+tool, which the hook does not match, and a working rule fell out: **edit files
+with Edit/Write; run things with Bash.** Now in the checklist.
+
+**3. Tightening opened a hole.** Requiring imports at line start let the
+one-liner `python3 -c "import sites_automation as S; …"` straight through. This
+was caught not by a failing test but by the fresh-session run producing **no
+ledger entry** — the guard had gone quiet. Fix: an import counts when it sits in
+code context (followed by `as`, `;`, `,`, `)` or end of line — prose reads
+*"import sites_automation is refused"*, code never does), plus a catch-all: an
+executing command that names a site module *and* a write token is a write in
+any syntax. Both shapes are unit-tested.
+
+Principle, extending the canary's: **a guard that refuses correct work is as
+broken as one that passes bad work — and a guard that goes quiet is worse than
+either, because nothing reports it.** That is why the end-to-end check reads
+the ledger, not the exit code.
+
+### Limits, stated so they are not oversold
+
+- The hook reads **command text, not the DOM**. A `python -` heredoc that
+  imports a site module and contains a write token is refused even when it only
+  writes a file — recorded in the tests as `KNOWN LIMIT`. Use Edit/Write.
+- On a client's own Pro account the hook lives in the project's
+  `settings.json`, which a human can edit. Managed, non-overridable settings are
+  an Enterprise channel. **It stops an agent from drifting; it does not stop a
+  person from deciding.**
+- Landing-Rule enforcement itself lives inside the door (`gate_2_landing` over
+  `PAGE_WIREFRAME`). The hook enforces "use the door"; the door enforces the
+  rule. Two layers, one definition of each.
+
+### Not done, deliberately
+
+**No waiver was written.** The two scratch sites used for placement tests
+(SBDC `test` page, HopeLink scratch) will now be refused until a human places a
+waiver naming them. `waived_by` is a person; writing one on Andrew's behalf
+would be the agent granting itself the thing the file exists to withhold.
+
+### Open
+
+- HopeLink's catalogue has no `00_HARNESS` tab and will keep refusing preflight
+  until it is retrofitted — raised 2026-09-01, still Andrew's call.
+- No `SessionStart` hook; `CLAUDE.md` carries the standing instruction.
+- Plugin conversion of the repo — later, per Andrew.
+
+
+________________
+
+
 ## 2026-09-07 — Coverage is proven, not claimed: Indexer Spec v2.1, GUARD 9, the canary eval — and the Ruflo review
 
 Author: Claude Code (claude-fable-5-1) + Andrew Powers.
