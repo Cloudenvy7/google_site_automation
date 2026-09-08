@@ -1,0 +1,29 @@
+00_HARNESS — STAGE 0. Fill this before the folder is indexed and before the client is asked anything.,, , , , , , 
+Governed by TEMPLATE - Build Harness and Guardrails v2.0
+https://docs.google.com/document/d/1_4107tyX6IPRDxBfCXjheSkWBpd4cT7QwdOPzz9Set8/edit
+
+THE BUILD DOES NOT START UNTIL EVERY ROW BELOW READS PASS OR WAIVED. A blank status is a stop.
+A gate that stops nothing is decoration. Refusal is a valid deliverable.
+
+id,stage,what must be true,how it is checked,on failure,status,checked_by,checked_date
+0.1,0,"Catalogue copied from template, all tabs present incl. 00_HARNESS and WAIVERS",tab list matches the template,hand-assembly is not permitted; copy again
+0.2,0,"00_README carries site_name, drive_folder_id, isa_doc_id, isa_status, harness_version",read 00_README,fill it
+0.3,0,Information Systems Architecture written FOR THIS SITE,isa_doc_id resolves,write the ISA before indexing
+GATE 1,0 exit,ISA ratified by the human,isa_status = RATIFIED,stop. a quick version to see how it looks is the same failure
+1.1,1,"Drive folder indexed, metadata only, nothing opened moved or shared",DRIVE_INVENTORY populated,re-run the indexer
+GATE 6,1 exit,Every file OPENED and read; unread files carry a reason,rows==files; opened + doc_type + what_it_says + key_entities + priority populated,stop. a partially-read index does not advance to Charter
+GUARD 8,1,Pass B ran as parallel subagents; coverage asserted,rows returned == files found in Pass A,"a shortfall is a stop, not a rounding error"
+GATE 6b,1 exit,Every P1/P2 file's content landed in a tab,extracted_to names a tab holding the content,the Landing Rule made auditable: content indexed but not landed is a defect
+2.1,2,"Charter goals numbered, each carrying the client's own sentence",CHARTER has client_sentence on every row,go back to the client
+GATE 4a,3 exit,Every MANIFEST row cites a charter_goal_id,no blank charter_goal_id,attach the goal or exclude and record the exclusion
+GATE 4b,4 exit,Every PAGE_PLAN row cites a charter_goal_id,no blank charter_goal_id,as above
+GATE 5,THE GATE,"Human has ratified Charter, Manifest and Page Plan",ratified_by and ratified_date present on all three,the council proposes; the human ratifies. nothing is built before this
+GUARD 5,5,"Every block preset used has been PLACED AND MEASURED, not assumed",block catalogue records the measured shape and how it was checked,measure it first
+GATE 2,5 and 6,THE LANDING RULE: every value to be rendered already exists as a cell,harness.py gate_2_landing,stop. gather the values into a tab first
+GATE 3,6 entry,No dependent row carries UNKNOWN / NOT ESTABLISHED / TBD / NOT RECORDED,harness.py gate_3_flags,"go and look. if genuinely unavailable, record a waiver in WAIVERS"
+GUARD 1,6,Destructive steps assert their target before acting,harness.py guard_1_assert_page,a click returning true is not evidence the click worked
+GUARD 2,6,Viewport set explicitly at run start; environment left unaltered,harness.py guard_2_viewport,a diagnostic must not change the system it is diagnosing
+LEDGER 1,6 exit,Run written to SITE_SYNC_LOG incl. failures and open defects,SITE_SYNC_LOG has rows for this run,an unlogged failure is rediscovered from scratch next session
+LEDGER 2,6 exit,Every entity on a page has a row with evidence and confidence,evidence tab exists and is complete,"affiliation is evidenced, never inferred from a name"
+AUDIT,throughout,A separate instance verified this build,audit record exists,maker is never checker
+LEDGER 5,every stage,"RUN_DEVLOG written: steps, seconds, chars, tokens, skips+reasons",RUN_DEVLOG tab covers this run,an unlogged step cannot be audited; the agent's later account is not evidence

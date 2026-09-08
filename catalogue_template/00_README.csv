@@ -1,0 +1,57 @@
+PER-SITE VISUAL KNOWLEDGE CATALOGUE — TEMPLATE v1.0
+
+STAGE 0 KEYS — fill before indexing
+site_name
+drive_folder_id
+catalogue_id
+isa_doc_id
+isa_status,NOT WRITTEN
+harness_doc_id,1_4107tyX6IPRDxBfCXjheSkWBpd4cT7QwdOPzz9Set8
+harness_version,v2.0
+stage_0_completed_by
+stage_0_completed_date
+
+COPY THIS. Do not hand-assemble a catalogue. Two catalogues built before this template
+"existed had already diverged (5 tabs vs 7), which is the drift this prevents."
+
+"ONE WORKBOOK PER SITE. Nine tabs, in order, with these exact names. A catalogue missing"
+"a tab is not a smaller catalogue, it is a broken one - later stages read columns by name"
+and fail silently when a name moves. A tab that does not apply stays present and empty.
+
+THE BINDING RULE. Every MANIFEST row cites a charter_goal_id. A row without one is
+invalid and does not execute. Mirrors the substrate rule that every relation cites a
+source_event_id: provenance applied to content decisions rather than facts.
+
+SCOPE. This workbook holds one site. The Visual Second Brain Substrate does NOT hold
+this content - it holds a RES- pointer row to this workbook in 06_RESOURCES.
+
+STAGE MAP
+  DRIVE_INVENTORY,"stage 1 - index, metadata only, nothing opened or moved"
+  CHARTER,"stage 2 - why the site exists, in the client's words"
+  MANIFEST,"stage 3 - what is in, what is out, and why for both"
+  PAGE_PLAN,stage 4 - which content on which page. NO block column.
+  --- GATE ---,advisor ratifies stages 2-4 before anything is built
+  SITE_CONTENT_BLOCKS,stage 5 - render: block types and cell content
+  SITE_PAGES / SITE_ASSETS,stage 5 - page structure and asset register
+  SITE_SYNC_LOG,"stage 6 - every build run, success or failure"
+
+FILL IN BEFORE USE
+  Site name
+  Client / org
+  Source Drive folder
+  Site editor URL
+  Published URL
+  Substrate entity id
+  Catalogued on
+
+
+TRACE RULE
+  Selected content,traces to a MANIFEST row id
+  Authored content,traces to a Charter goal: 'authored: GOAL-nn'
+  An item with neither trace is invalid.
+
+  Every MANIFEST row cites a charter_goal_id - includes AND excludes.
+  An exclusion that cannot name its goal has not been thought through.
+
+  HOME is always mostly AUTHORED: a README plus executive summary at a
+"  high-school-freshman reading level, with a map of every other page."

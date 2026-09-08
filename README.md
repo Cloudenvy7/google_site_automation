@@ -11,6 +11,12 @@ the Sites publishing track only.**
 
 ## Start here
 
+**[`START_HERE.md`](START_HERE.md)** — the index: what to read in what order,
+every stage mapped to its governing document and its code, and where the live
+Sheets and Sites are.
+
+Then:
+
 1. **`skills/information_systems_architecture/SKILL.md`** — the procedure. Load
    it before touching a Site or a client Drive folder.
 2. **`skills/information_systems_architecture/references/FIRST_TRY_CHECKLIST.md`**
@@ -18,6 +24,20 @@ the Sites publishing track only.**
    rebuild.
 3. **`DEVLOG.md`** — what was built 2026-08-28 → 09-07, including the failures
    and what each one produced.
+
+## What is in this repo
+
+| | |
+|---|---|
+| `docs/` | The 11 governing documents, mirrored from the Google Sites Automation Drive folder. Each carries its Drive ID; **the Doc is canonical.** |
+| `catalogue_template/` | The 11 tabs of the per-site catalogue template as CSV, so the schema is diffable. Copy the Sheet, don't rebuild from these. |
+| `scripts/` | The executable half — CDP write path, harness, indexers, ledger, extractors. |
+| `skills/` | The ISA skill: procedure plus three references. |
+| `DEVLOG.md` | What was built, what failed, what each failure produced. |
+
+**Not here, deliberately:** the live Sheets. They are working data, and a copy in
+git goes stale the moment the real one is edited. The substrate additionally
+holds real people and organisations. IDs are in `START_HERE.md`.
 
 ## The rule that governs the rest
 

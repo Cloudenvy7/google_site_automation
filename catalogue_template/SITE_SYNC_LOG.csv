@@ -1,0 +1,1 @@
+sync_id,sync_date,triggered_by,trigger_source_url,sync_scope,blocks_attempted,blocks_succeeded,blocks_failed,manual_edits_detected,manual_edits_action,duration_seconds,status,failure_details,failure_details_url,entities_touched,reviewer_notes
