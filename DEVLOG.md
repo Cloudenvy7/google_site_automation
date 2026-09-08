@@ -591,10 +591,12 @@ this commit — it existed only as untracked files in a worktree.
    means what is constant *across* sites, and that needs a second site (BFS X CG
    or BFS X RCRC) run through the extractor and diffed.
 8. **`Tacoma Commuter.mp4`** is unindexed pending a transcription step.
-9. **No GitHub remote exists.** `origin` is a local filesystem path
-   (`/home/tyler/Projects/Blackfox Studios/advisor-os`). Andrew asked on
-   2026-09-07 for a private GitHub repo so everything is logged; `gh` is
-   authenticated as `Cloudenvy7`. **Not created — see the privacy flag below.**
+9. ~~**No GitHub remote exists.**~~ **CORRECTION, 2026-09-07.** Reading only the
+   checkout's `origin` (a local filesystem path) produced the answer "there is no
+   GitHub repo." **`Cloudenvy7/advisor-os` existed all along and is private.**
+   Checking the remote a repo declares is not the same as checking the account.
+   This track now lives in **`Cloudenvy7/google_site_automation`** (private), and
+   also on the `google-sites-automation` branch of `advisor-os`.
 
 ### Privacy flags
 
