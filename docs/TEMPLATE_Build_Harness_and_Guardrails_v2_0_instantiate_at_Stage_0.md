@@ -1,8 +1,8 @@
 <!-- MIRRORED FROM GOOGLE DRIVE. The Doc is canonical; edit it there.
      name     : TEMPLATE - Build Harness and Guardrails v2.0 (instantiate at Stage 0)
      drive_id : 1_4107tyX6IPRDxBfCXjheSkWBpd4cT7QwdOPzz9Set8
-     modified : 2026-09-01
-     exported : 2026-09-07 as markdown
+     modified : 2026-09-08
+     exported : 2026-09-07 as markdown (re-exported after the v2.1 / GUARD 9 correction was appended)
 -->
 
 # TEMPLATE — BUILD HARNESS AND GUARDRAILS
@@ -189,4 +189,13 @@ LEDGER 5 — RUN\_DEVLOG ON EVERY STEP
 Every step records what it read, chars processed, seconds elapsed, measured subagent tokens, and EVERY SKIP WITH ITS REASON. A skip without a reason is refused by the ledger itself.  
 Subagent token usage is MEASURED and recorded verbatim. The orchestrating session's own token usage is not available to it programmatically, so the ledger records content volume and marks any derived figure as an ESTIMATE with its divisor. An estimate is never reported as a measurement.  
 The ledger exists so an auditor can establish whether a step did the work, rather than taking the agent's later account of it. The account was wrong once already.  
-Implemented by: .agents/scripts/run\_ledger.py — writes to the RUN\_DEVLOG tab of the catalogue.  
+Implemented by: .agents/scripts/run\_ledger.py — writes to the RUN\_DEVLOG tab of the catalogue.
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+CORRECTION — GUARD 9 ADDED, 2026-09-07 — COVERAGE IS PROVEN, NOT CLAIMED  
+Ratified by Andrew Powers, 2026-09-07. Appended; Guards 1–8 above stand.
+
+GUARD 9 — coverage is proven, not claimed. Fires DURING Stage 1 commit. Failure: verify\_index\_integrity.py compared the agent's reported chars\_read to a re-derived count — but the packet had handed the agent that number, so an agent that read nothing could echo it and pass. The orchestrator now plants unforgeable markers through chunked text (coverage.py) and the agent must hand them back; coverage is arithmetic on what was RETURNED. Any missing or fabricated marker is a Refusal and the row is not written. No-text files (image, video, scanned PDF) are exempt only because GUARD 7 already demands opened=no with a reason. The deterministic half: the indexing agent runs with Read-only tools, so the only way to see a marker is to read.
+
+Regression test: evals/canary\_partial\_read.py — a synthetic fact at 93% of a long file must reach the row, and a deliberately partial read must be refused. A guard that never fires is indistinguishable from no guard. Full text: Indexer Spec v2.1.  

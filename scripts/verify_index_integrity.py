@@ -16,9 +16,20 @@ looking at something other than what it indexed.
 
 Maker is never checker: this runs in the orchestrator, not in the agent that
 produced the row.
+
+CORRECTION 2026-09-07 -- what this does NOT catch, kept visible rather than
+edited away. This compares the agent's reported chars_read to a re-derived
+extractor count. But the packet HANDED the agent that number. So this catches
+an agent that read the WRONG file (char counts differ) and cannot catch an
+agent that read PART of the right one (it echoes the number it was given).
+Andrew's standing concern is precisely the second case. Coverage against
+partial reads is GUARD 9 (harness.guard_9_coverage) over planted markers
+(coverage.py), enforced in indexer_v3.commit. Keep this script for the
+wrong-file case; do not cite it as proof of reading.
 """
 
 import glob
+import os
 import json
 import subprocess
 import sys
@@ -28,7 +39,7 @@ TOL = 0.02   # 2% -- pdftotext is deterministic; docs may vary by trailing bytes
 
 
 def chars_for(fid, mime, outdir):
-    r = subprocess.run([VENV, "/tmp/read_drive_file.py", fid, mime, outdir],
+    r = subprocess.run([VENV, os.environ.get("READER", os.path.join(os.path.dirname(os.path.abspath(__file__)), "read_drive_file.py")), fid, mime, outdir],
                        capture_output=True, text=True, timeout=900)
     status, chars = "", 0
     for line in r.stdout.splitlines():

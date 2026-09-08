@@ -1,0 +1,42 @@
+name: Agent evals
+# The AI-native SDLC playbook's continuous-eval play, aimed at one failure:
+# an indexing agent reporting a file read when it read part of it.
+on:
+  pull_request:
+    paths: ['.agents/scripts/indexer_v3.py', '.agents/scripts/coverage.py',
+            '.agents/scripts/harness.py', '.agents/scripts/read_drive_file.py',
+            '.agents/evals/**', '.claude/**', 'CLAUDE.md',
+            'scripts/**', 'evals/**', 'skills/**']
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install websocket-client google-api-python-client google-auth
+      - name: Deterministic coverage tests (no model)
+        run: |
+          if [ -x .agents/evals/run.sh ]; then .agents/evals/run.sh; else evals/run.sh; fi
+  canary:
+    # Needs a model. Skipped unless ANTHROPIC_API_KEY is configured for the repo.
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install websocket-client google-api-python-client google-auth
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: Canary eval (positive + negative control) on Haiku
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -x .agents/evals/run.sh ]; then .agents/evals/run.sh --with-model haiku; else evals/run.sh --with-model haiku; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: eval-history, path: '**/evals/history.jsonl' }

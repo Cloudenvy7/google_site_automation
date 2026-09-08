@@ -1,0 +1,5 @@
+{
+  "_why": "Monotone-decreasing baseline (pattern borrowed from ruvnet/ruflo audit-tool-descriptions). Each count may never rise; lower it after a fix with --update-baseline. A rise fails the commit.",
+  "guard9_bypass_paths": 0,
+  "agent_supplied_chars_read": 0
+}

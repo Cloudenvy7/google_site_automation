@@ -23,8 +23,13 @@ import json
 import re
 import time
 
-import chrome_automation as C
-import sites_automation as S
+# Browser modules are imported lazily. GUARD 9 and the gates are used by the
+# indexer and by the eval suite, which must load without a browser stack.
+try:
+    import chrome_automation as C
+    import sites_automation as S
+except Exception:          # websocket-client absent, or no display
+    C = S = None
 
 VIEWPORT = (1920, 1080)
 BLOCKING_FLAGS = ("UNKNOWN", "NOT ESTABLISHED", "NOT_ESTABLISHED", "TBD",
@@ -303,6 +308,44 @@ def guard_7_no_fabrication(value, source_evidence):
         raise Refusal(f"GUARD 7: {value!r} has no source evidence. "
                       "State what is missing rather than filling the cell.")
     return True
+
+
+def guard_9_coverage(name, expected_markers, returned_markers, status="OPENED"):
+    """GUARD 9 -- coverage is proven, not claimed.
+
+    Failure (2026-09-07): verify_index_integrity.py compared the agent's
+    reported chars_read to a re-derived extractor count -- but the packet had
+    handed the agent that very number. An agent that read nothing could echo
+    it and pass. The check proved the extractor was deterministic and proved
+    nothing about reading. The one v3 run on record cost about half the tokens
+    its text should have needed, and nothing could say whether it had read
+    the rest.
+
+    So the orchestrator plants unforgeable markers through the text
+    (coverage.py) and the agent must hand them back. Coverage is arithmetic
+    on what was RETURNED, never on what was claimed. A file with no text layer
+    (image, video, scanned PDF) is exempt only because it carries opened=no
+    and a reason -- GUARD 7's rule, not a loophole.
+
+    Returns the coverage dict on success. Raises Refusal on any missing or
+    fabricated marker. A Refusal here is not an error to route around: it is
+    the statement that this row was not read, and the row must not be written.
+    """
+    import coverage as _cv
+    if status in _cv.NO_TEXT_STATUSES:
+        return {"total": 0, "seen": 0, "missing": [], "pct": 100.0,
+                "ok": True, "unknown": [], "exempt": status}
+    cov = _cv.coverage(expected_markers, returned_markers)
+    if cov["unknown"]:
+        raise Refusal(f"GUARD 9: {name!r} returned {len(cov['unknown'])} marker(s) "
+                      f"that were never planted. A fabricated marker is a finding, "
+                      f"not a rounding error. Refusing to commit.")
+    if cov["missing"]:
+        raise Refusal(f"GUARD 9: {name!r} coverage {cov['pct']}% -- "
+                      f"{cov['seen']}/{cov['total']} markers returned, "
+                      f"{len(cov['missing'])} unread stretch(es). The file was not "
+                      f"read in full. Refusing to commit; re-run the packet.")
+    return cov
 
 
 # --------------------------------------------------------------------------

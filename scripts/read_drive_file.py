@@ -106,8 +106,13 @@ try:
         t = ""
         for s in retry(lambda: sh.get(spreadsheetId=fid).execute())["sheets"]:
             tab = s["properties"]["title"]
+            # CORRECTION 2026-09-07: this read `{tab}!A1:AZ400`, which silently
+            # dropped every row past 400 and every column past AZ, then reported
+            # OPENED with the smaller char count. That is skipping, hidden in the
+            # deterministic layer where nobody was looking for it. A bare tab
+            # name returns the whole used range.
             v = retry(lambda: sh.values().get(
-                spreadsheetId=fid, range=f"{tab}!A1:AZ400").execute()).get("values", [])
+                spreadsheetId=fid, range=f"'{tab}'").execute()).get("values", [])
             t += f"\n### TAB: {tab} ({len(v)} rows)\n"
             t += "\n".join(" | ".join(str(c) for c in r) for r in v)
         emit("OPENED", t)

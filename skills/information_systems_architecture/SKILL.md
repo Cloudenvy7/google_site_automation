@@ -70,8 +70,16 @@ Also read, in this folder:
 And the site's own `DRIVE_INVENTORY` and `CHARTER` tabs, if Stage 1–2 have run.
 
 Scripts: `.agents/scripts/` — `harness.py` (gates and guards),
-`drive_indexer.py` (stage 1), `build_from_wireframe.py` (stage 6),
-`sites_automation.py` + `wireframe_build.py` (CDP primitives).
+`indexer_v3.py` (stage 1 — v3.1, coverage proven by planted markers; GUARD 9),
+`build_from_wireframe.py` (stage 6), `sites_automation.py` +
+`wireframe_build.py` (CDP primitives). `drive_indexer.py` is the superseded
+v1.0 metadata-only crawl; do not use it for Stage 1.
+
+Evals: `.agents/evals/run.sh` — deterministic coverage tests on every commit
+that touches the indexer, harness, skills or CLAUDE.md; `--with-model` runs
+the canary (a synthetic fact at 93% of a long file must reach the row, and a
+deliberately partial read must be refused). If you change `AGENT_PROMPT`, run
+the canary before you trust the change.
 
 **A worked instance to compare against, never to copy from:** the HopeLink Ride
 Ready ISA (`1MpXVxdm3nY0m_mH6P8a4091WhkJuSghUtxxxJEoK0M0`). Read it to see what a

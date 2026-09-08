@@ -1,8 +1,8 @@
 <!-- MIRRORED FROM GOOGLE DRIVE. The Doc is canonical; edit it there.
      name     : Indexer Spec - Stage 1 v2.0 (every file is opened)
      drive_id : 1kABU-BCwXsXWHz8YmnCmbZPdYfjqPydHwlFSJihexuo
-     modified : 2026-09-01
-     exported : 2026-09-07 as markdown
+     modified : 2026-09-08
+     exported : 2026-09-07 as markdown (re-exported after the v2.1 / GUARD 9 correction was appended)
 -->
 
 # **INDEXER SPEC — STAGE 1**
@@ -83,4 +83,23 @@ A partially-read index does not advance to Stage 2\. The Charter is written agai
 
 .agents/scripts/drive\_indexer.py — Pass A.  
 .agents/scripts/run\_ledger.py — the ledger, used by both passes.  
-Pass B orchestration is agent work, not a script: the reading is judgment, and the spec's job is to make the judgment complete and auditable rather than to automate it away.  
+Pass B orchestration is agent work, not a script: the reading is judgment, and the spec's job is to make the judgment complete and auditable rather than to automate it away.
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+CORRECTION — v2.1 AMENDMENT, 2026-09-07 — COVERAGE IS PROVEN, NOT CLAIMED  
+Ratified by Andrew Powers, 2026-09-07. Appended; v2.0 above stands and is not edited.
+
+WHAT v2.0 COULD NOT SEE. chars\_read was verified by comparing the agent's reported count to a re-derived extractor count — but the packet had handed the agent that number. An agent that read nothing could echo it and pass. The check proved the extractor was deterministic; it proved nothing about reading. Separately, the extractor read spreadsheets as A1:AZ400, silently dropping rows past 400 and columns past AZ while reporting OPENED. Both fixed.
+
+THE RULE, EXTENDED. Coverage is proven, not claimed. A row may be written only when the orchestrator can show, from what the agent RETURNED rather than what it SAID, that every part of the file was in front of the model.
+
+MECHANISM. (1) CHUNK — 12,000-character pieces a cheap model reads in one call. (2) MARK — a random ⟦CHK:xxxxxx⟧ every 1,500 characters, regenerated per run, expected list kept by the orchestrator, never in the packet. (3) REFUSE — GUARD 9 (harness.guard\_9\_coverage) refuses any missing or fabricated marker; the file stays PENDING. (4) COUNT HERE — chars\_read is the orchestrator's count of what it sliced, never the agent's. Columns appended: chunks\_total, chunks\_verified, coverage\_pct. (5) READ-ONLY REACH — the agent runs with \--allowedTools Read,Write: no Grep, no Bash, so the only way to see a marker is to read the chunk it sits in.
+
+WHAT MARKERS DO NOT PROVE. Presence in context, not comprehension. The canary eval (evals/canary\_partial\_read.py) plants a synthetic fact at 93% of a long file and asserts it reaches the row; a negative control tells the agent to read only the first chunk and asserts GUARD 9 refuses. Measured 2026-09-07 on Haiku: positive 100% coverage, both canaries found, $0.105 for 90,151 chars; negative control refused at 38.1% (8/21 markers).
+
+EXIT CONDITION, EXTENDED. Every DONE row with opened \= yes carries coverage\_pct \= 100\.
+
+PRINCIPLE EXTRACTED. A check that compares a claim to the source of the claim is not a check. Prove from what was returned, never from what was reported.
+
+Full text and code: github.com/Cloudenvy7/google\_site\_automation — docs/Indexer\_Spec\_Stage\_1\_v2\_1\_coverage\_is\_proven.md, scripts/coverage.py, scripts/indexer\_v3.py, evals/.  

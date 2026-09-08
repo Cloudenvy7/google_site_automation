@@ -33,6 +33,7 @@ Then:
 | `catalogue_template/` | The 11 tabs of the per-site catalogue template as CSV, so the schema is diffable. Copy the Sheet, don't rebuild from these. |
 | `scripts/` | The executable half — CDP write path, harness, indexers, ledger, extractors. |
 | `skills/` | The ISA skill: procedure plus three references. |
+| `evals/` | Coverage unit tests (every commit) and the canary eval (on demand / nightly). See `START_HERE.md`. |
 | `DEVLOG.md` | What was built, what failed, what each failure produced. |
 
 **Not here, deliberately:** the live Sheets. They are working data, and a copy in

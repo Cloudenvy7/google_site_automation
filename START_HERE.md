@@ -25,7 +25,7 @@ catalogues are projections.* They are linked below instead.
 | Stage | Governing document | Code |
 |---|---|---|
 | **0 · HARNESS** | `docs/TEMPLATE_Build_Harness_and_Guardrails_v2_0...md`<br>`docs/TEMPLATE_Information_Systems_Architecture_v1_0.md` | `scripts/harness.py` |
-| **1 · INDEX** | `docs/Indexer_Spec_Stage_1_v2_0_every_file_is_opened.md` | `scripts/indexer_v3.py` *(current)*<br>`scripts/drive_indexer.py` *(v1.0 contract — superseded)*<br>`scripts/merge_index_pass_b.py`, `scripts/verify_index_integrity.py` |
+| **1 · INDEX** | `docs/Indexer_Spec_Stage_1_v2_0_every_file_is_opened.md`<br>`docs/Indexer_Spec_Stage_1_v2_1_coverage_is_proven.md` *(amendment)* | `scripts/indexer_v3.py` *(v3.1 — chunk, mark, GUARD 9)*<br>`scripts/coverage.py`, `scripts/read_drive_file.py`<br>`scripts/drive_indexer.py` *(v1.0 contract — superseded)*<br>`scripts/merge_index_pass_b.py`, `scripts/verify_index_integrity.py` *(wrong-file check only)* |
 | **2 · CHARTER** | `docs/Advisor_OS_Site_Architect_Master_Prompt_v0_3.md` | — |
 | **3 · MANIFEST** | same | — |
 | **4 · PAGE PLAN** | same | — |
@@ -37,6 +37,21 @@ catalogues are projections.* They are linked below instead.
 Reference, not stage-bound:
 `docs/Architecture_Principles_what_makes_a_site_architecture_correct_v1_0.md`,
 `docs/First_Try_Checklist_Google_Sites_build_v1_0.md`.
+
+## The evals
+
+[`evals/`](evals/) — the playbook's continuous-eval play, aimed at one failure:
+an indexing agent reporting a file read when it read part of it.
+
+| | |
+|---|---|
+| `evals/run.sh` | Deterministic tests, seconds, no model. Runs from `.githooks/pre-commit` on any change to the indexer, harness, skills or `CLAUDE.md`. |
+| `evals/run.sh --with-model haiku` | The **canary**: a synthetic fact at 93% of a 90k-char file must reach the row, and a deliberately partial read must be refused by GUARD 9. Costs real tokens. |
+| `evals/history.jsonl` | One line per model run — commit, model, tokens, cost, pass/fail — so a regression can be dated. |
+| `evals/baseline.json` | Counts that may never rise (pattern from ruvnet/ruflo). |
+| `.github/workflows/agent-evals.yml` | Unit on every PR; canary nightly when `ANTHROPIC_API_KEY` is set. |
+
+Enable the pre-commit hook once per clone: `git config core.hooksPath .githooks`.
 
 ## The catalogue template
 

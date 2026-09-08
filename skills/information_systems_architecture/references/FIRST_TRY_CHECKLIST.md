@@ -26,6 +26,15 @@ Every line is something that cost at least one rebuild. Read before building.
       a name or a guess.
 - [ ] If a source does not state it, the cell says what is missing. A blank with
       a reason outranks a plausible guess.
+- [ ] **Coverage is proven, not claimed** (Indexer Spec v2.1, GUARD 9). Never
+      cite `chars_read` or `verify_index_integrity.py` as proof a file was read
+      — the first is now the orchestrator's count, the second only catches the
+      *wrong* file. Proof is the returned markers. Run the indexing agent with
+      `--allowedTools Read,Write` so the only way to see a marker is to read.
+- [ ] **A check that compares a claim to the source of the claim is not a
+      check.** v3.0 handed the agent a char count and then verified the agent
+      reported that count. Prove from what was returned, never from what was
+      reported.
 
 ## Browser build (Google Sites over CDP)
 

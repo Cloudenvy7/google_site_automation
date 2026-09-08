@@ -30,10 +30,21 @@ Four changes carry all of it:
 The no-skipping rule is unchanged: every file gets a row, every unread file
 carries a reason, and coverage is asserted before the index is declared complete.
 
+v3.1 -- 2026-09-07 -- COVERAGE IS PROVEN, NOT CLAIMED (Indexer Spec v2.1).
+v3.0 handed the agent whole files and the agent's own chars_read. An agent that
+read nothing could echo the number and pass every check. Now the orchestrator
+chunks the text, plants unforgeable markers (coverage.py), keeps the expected
+list to itself, and GUARD 9 refuses any row whose returned markers do not cover
+the file. chars_read is computed HERE from the slices, never taken from the
+agent. The agent runs with Read-only tools so the only way to see a marker is
+to read the chunk it sits in. Ratified by Andrew Powers, 2026-09-07.
+
 usage:
   indexer_v3.py seed   <root_folder_id> <spreadsheet_id>   # crawl, write PENDING rows
-  indexer_v3.py next   <spreadsheet_id> [n]                # emit a work packet
-  indexer_v3.py commit <spreadsheet_id> <results.json>     # write rows back, mark DONE
+  indexer_v3.py next   <spreadsheet_id> [n]                # extract, chunk, mark; emit a packet
+  indexer_v3.py prompt <packet.json>                       # print the agent prompt for this packet
+  indexer_v3.py agent  <packet.json> [model]               # run `claude -p` on the packet (Read/Write only)
+  indexer_v3.py commit <spreadsheet_id> <results.json>     # GUARD 9, then write rows, mark DONE
   indexer_v3.py status <spreadsheet_id>                    # progress, and what is left
 """
 
@@ -43,22 +54,52 @@ import subprocess
 import sys
 import datetime
 
+import secrets
+
 import google.oauth2.service_account as sa
 from googleapiclient.discovery import build
 
-SA = os.environ.get("ADVISOR_SA",
-                    "/home/tyler/Projects/Blackfox Studios/service_account.json")
+import coverage as cv
+import harness as H
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SA = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", os.environ.get("ADVISOR_SA",
+                    "/home/tyler/Projects/Blackfox Studios/service_account.json"))
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly",
           "https://www.googleapis.com/auth/spreadsheets"]
 TAB = "DRIVE_INDEX"
-WORK = "/tmp/index_work"
+WORK = os.environ.get("INDEX_WORK", os.path.expanduser("~/.advisor_os/index_work"))
+READER = os.environ.get("READER", os.path.join(HERE, "read_drive_file.py"))
 FOLDER_MIME = "application/vnd.google-apps.folder"
 
+# v3.1 appends three columns. Existing tabs get their header extended in place;
+# nothing already written moves. chars_read keeps its name and CHANGES MEANING:
+# it is now the orchestrator's count of what it sliced, never the agent's claim.
 COLS = ["file_id", "name", "mime_type", "size", "full_path", "web_link",
         "status", "opened", "not_opened_reason", "doc_type", "what_it_says",
         "key_entities", "key_dates", "priority", "priority_reason",
         "site_candidate", "proposed_section", "extracted_to", "chars_read",
-        "indexed_by", "indexed_at", "attempts"]
+        "indexed_by", "indexed_at", "attempts",
+        "chunks_total", "chunks_verified", "coverage_pct"]
+LAST_COL = "Y"
+
+AGENT_PROMPT = """You are an indexing agent. Read {packet} -- a JSON packet listing files whose text has ALREADY been extracted and split into chunk files for you. Do not download anything. You have only the Read and Write tools.
+
+For EACH entry in "files":
+1. Read EVERY path listed in its "chunks", in order, each one IN FULL -- one Read call per chunk, no offset/limit. Do not stop early. Do not skip a chunk because the file "looks unimportant"; importance is an OUTPUT of the index, not an input.
+2. Each chunk contains scaffolding tokens shaped like ⟦CHK:xxxxxx⟧. Record every one you encounter, in the order you meet them, in "markers_seen". They are how the orchestrator proves you read the whole file. Do not search for them, do not guess them, do not invent any. If you did not read a chunk, its markers must NOT appear -- and say so in what_it_says.
+3. If "extractor_status" is not OPENED, the file gets opened="no" and the reason from the chunk text.
+4. If "localpath" is an image, Read it (look at it) before writing the row. An image is not opened until someone has looked at it.
+
+Then Write ONE JSON array to {results} -- exactly one object per entry in "files", with these keys:
+  file_id, name, opened ("yes"/"no"), not_opened_reason, doc_type,
+  what_it_says (2-3 sentences written from READING it; never the filename restated),
+  key_entities (people and organisations named), key_dates (dates the content is about),
+  priority ("P1" governs the architecture / "P2" substantive / "P3" supporting / "P4" noise),
+  priority_reason, site_candidate ("yes"/"no"), proposed_section,
+  markers_seen (array of the ⟦CHK:...⟧ tokens you actually encountered), indexed_by.
+
+Never leave not_opened_reason blank when opened is "no". Never report a file as read that you did not read in full."""
 
 
 def svc():
@@ -125,7 +166,8 @@ def crawl(dr, root, drive_id):
 
 
 def ensure_tab(sh, sid):
-    have = [s["properties"]["title"] for s in sh.get(spreadsheetId=sid).execute()["sheets"]]
+    meta = sh.get(spreadsheetId=sid).execute()["sheets"]
+    have = {m["properties"]["title"]: m["properties"] for m in meta}
     if TAB not in have:
         sh.batchUpdate(spreadsheetId=sid, body={"requests": [{"addSheet": {
             "properties": {"title": TAB,
@@ -133,11 +175,22 @@ def ensure_tab(sh, sid):
                                               "columnCount": len(COLS)}}}}]}).execute()
         sh.values().update(spreadsheetId=sid, range=f"{TAB}!A1",
                            valueInputOption="RAW", body={"values": [COLS]}).execute()
+        return
+    # v3.0 tab: extend the header for the three v3.1 columns without touching rows.
+    hdr = sh.values().get(spreadsheetId=sid, range=f"{TAB}!1:1").execute().get("values", [[]])[0]
+    if len(hdr) < len(COLS):
+        cols_now = have[TAB]["gridProperties"].get("columnCount", 0)
+        if cols_now < len(COLS):
+            sh.batchUpdate(spreadsheetId=sid, body={"requests": [{"appendDimension": {
+                "sheetId": have[TAB]["sheetId"], "dimension": "COLUMNS",
+                "length": len(COLS) - cols_now}}]}).execute()
+        sh.values().update(spreadsheetId=sid, range=f"{TAB}!A1",
+                           valueInputOption="RAW", body={"values": [COLS]}).execute()
 
 
 def read_rows(sh, sid):
     v = sh.values().get(spreadsheetId=sid,
-                        range=f"{TAB}!A1:V20000").execute().get("values", [])
+                        range=f"{TAB}!A1:{LAST_COL}20000").execute().get("values", [])
     if not v:
         return [], {}
     hdr = v[0]
@@ -201,7 +254,8 @@ def seed(root, sid, force=False):
     ensure_tab(sh, sid)
     _, existing = read_rows(sh, sid)
     new = [[fid, v["name"], v["mime"], v["size"], v["path"], v["link"],
-            "PENDING", "", "", "", "", "", "", "", "", "", "", "", 0, "", "", 0]
+            "PENDING", "", "", "", "", "", "", "", "", "", "", "", 0, "", "", 0,
+            0, 0, ""]
            for fid, v in files.items() if fid not in existing]
     if new:
         sh.values().append(spreadsheetId=sid, range=f"{TAB}!A1",
@@ -215,87 +269,222 @@ def seed(root, sid, force=False):
 
 # ---------------------------------------------------------------- next
 
-def next_packet(sid, n=4):
-    """Emit the next n unfinished files, with their text already extracted.
+def extract(fid, mime, workdir):
+    """Run the deterministic extractor. Returns (status, text, localpath)."""
+    try:
+        res = subprocess.run([sys.executable, READER, fid, mime, workdir],
+                             capture_output=True, text=True, timeout=900)
+        raw = res.stdout
+    except Exception as e:
+        raw = f"STATUS::ERROR\nCHARS::0\nTEXT::\n(extractor failed: {e})"
+    status = next((l.split("::", 1)[1] for l in raw.splitlines()
+                   if l.startswith("STATUS::")), "ERROR")
+    local = next((l.split("::", 1)[1] for l in raw.splitlines()
+                  if l.startswith("LOCALPATH::")), "")
+    text = raw.split("TEXT::\n", 1)[1] if "TEXT::\n" in raw else ""
+    return status, text, local
 
-    Extraction happens HERE, not in the model. The packet the agent receives is
-    paths to text on disk -- so a 300,000-character transcript costs the model
-    only what it actually reads, and costs the orchestrator nothing.
+
+def build_packet(entries, workdir, nonce=None):
+    """Chunk + mark every entry; write chunk files; keep the expected markers
+    OUT of the packet. Pure apart from file writes -- the eval uses this too,
+    so production and test share one code path.
+
+    entries: [{file_id, name, mime, path, extractor_status, text, localpath}]
+    returns: packet dict (what the agent sees)
+    side-effect: {workdir}/expected_{nonce}.json (what only the orchestrator sees)
+    """
+    nonce = nonce or secrets.token_hex(4)
+    os.makedirs(workdir, exist_ok=True)
+    files, expected = [], {}
+    for e in entries:
+        chunks, marks = cv.plant(e.get("text") or "")
+        paths = cv.write_chunks(chunks, workdir, e["file_id"])
+        expected[e["file_id"]] = {"markers": marks,
+                                  "chars": cv.orchestrator_chars(chunks),
+                                  "chunks": len(chunks),
+                                  "status": e.get("extractor_status", "OPENED"),
+                                  "name": e.get("name", "")}
+        files.append({"file_id": e["file_id"], "name": e.get("name", ""),
+                      "mime": e.get("mime", ""), "path": e.get("path", ""),
+                      "extractor_status": e.get("extractor_status", "OPENED"),
+                      "chunks": paths, "localpath": e.get("localpath", "")})
+    packet = {"nonce": nonce, "workdir": workdir,
+              "results": os.path.join(workdir, f"results_{nonce}.json"),
+              "files": files}
+    with open(os.path.join(workdir, f"expected_{nonce}.json"), "w") as fh:
+        json.dump(expected, fh, indent=1)
+    with open(os.path.join(workdir, f"packet_{nonce}.json"), "w") as fh:
+        json.dump(packet, fh, indent=1)
+    return packet
+
+
+def next_packet(sid, n=4):
+    """Emit the next n unfinished files: extracted, chunked, marked.
+
+    Extraction happens HERE, not in the model. The agent receives paths to
+    chunk files on disk and nothing about their size -- v3.0 put the char
+    count in the packet, which is how an agent could echo it back as
+    chars_read without reading.
     """
     _, sh = svc()
     _, rows = read_rows(sh, sid)
     todo = [(rn, r) for rn, r in rows.values()
             if (r[6] if len(r) > 6 else "") not in ("DONE", "SKIPPED")]
     todo.sort(key=lambda x: int(x[1][21]) if len(x[1]) > 21 and str(x[1][21]).isdigit() else 0)
-    os.makedirs(WORK, exist_ok=True)
-    packet = []
+    entries = []
     for rn, r in todo[:n]:
-        fid, name, mime = r[0], r[1], r[2]
-        out = f"{WORK}/{fid}.txt"
-        try:
-            res = subprocess.run([sys.executable, os.environ.get("READER","/tmp/read_drive_file.py"),
-                                  fid, mime, WORK],
-                                 capture_output=True, text=True, timeout=900)
-            txt = res.stdout
-        except Exception as e:
-            txt = f"STATUS::ERROR\nCHARS::0\nTEXT::\n(extractor failed: {e})"
-        open(out, "w").write(txt)
-        status = next((l.split("::", 1)[1] for l in txt.splitlines()
-                       if l.startswith("STATUS::")), "ERROR")
-        chars = next((int(l.split("::", 1)[1]) for l in txt.splitlines()
-                      if l.startswith("CHARS::")), 0)
-        local = next((l.split("::", 1)[1] for l in txt.splitlines()
-                      if l.startswith("LOCALPATH::")), "")
-        packet.append({"file_id": fid, "name": name, "mime": mime,
-                       "path": r[4], "text_file": out, "extractor_status": status,
-                       "chars": chars, "localpath": local})
-    json.dump(packet, open("/tmp/packet.json", "w"), indent=1)
+        status, text, local = extract(r[0], r[2], WORK)
+        entries.append({"file_id": r[0], "name": r[1], "mime": r[2], "path": r[4],
+                        "extractor_status": status, "text": text, "localpath": local})
+    packet = build_packet(entries, WORK)
+    pk = os.path.join(WORK, f"packet_{packet['nonce']}.json")
     print(f"remaining : {len(todo)}")
-    print(f"packet    : {len(packet)} file(s) -> /tmp/packet.json")
-    for p in packet:
-        print(f"   {p['extractor_status']:26} {p['chars']:>8,}ch  {p['name'][:56]}")
-    if not packet:
+    print(f"packet    : {len(packet['files'])} file(s) -> {pk}")
+    exp = json.load(open(os.path.join(WORK, f"expected_{packet['nonce']}.json")))
+    for f in packet["files"]:
+        e = exp[f["file_id"]]
+        print(f"   {f['extractor_status']:26} {e['chars']:>9,}ch  {e['chunks']:>3} chunk(s)  {f['name'][:50]}")
+    if not packet["files"]:
         print("\nNothing left. Run: indexer_v3.py status <sid>")
+    else:
+        print(f"\nNext: indexer_v3.py agent {pk}   (or: prompt {pk} to run it yourself)")
+    return pk
+
+
+def prompt_for(packet_path):
+    p = json.load(open(packet_path))
+    return AGENT_PROMPT.format(packet=packet_path, results=p["results"])
+
+
+def run_agent(packet_path, model="haiku", extra_instruction=""):
+    """Run the indexing agent non-interactively with READ-ONLY reach.
+
+    --allowedTools Read,Write is the deterministic half of GUARD 9: with no
+    Grep and no Bash, the only way to see a marker is to read the chunk it
+    sits in. Returns (results_list_or_None, usage_dict, raw_stdout).
+    """
+    p = json.load(open(packet_path))
+    prompt = prompt_for(packet_path) + ("\n\n" + extra_instruction if extra_instruction else "")
+    cmd = ["claude", "-p", prompt, "--model", model,
+           "--allowedTools", "Read,Write", "--output-format", "json",
+           ]
+    t0 = datetime.datetime.now()
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    secs = (datetime.datetime.now() - t0).total_seconds()
+    usage = {"seconds": round(secs, 1), "model": model}
+    try:
+        j = json.loads(res.stdout)
+        u = j.get("usage") or {}
+        usage.update({"input_tokens": u.get("input_tokens"),
+                      "output_tokens": u.get("output_tokens"),
+                      "cache_read": u.get("cache_read_input_tokens"),
+                      "cost_usd": j.get("total_cost_usd"),
+                      "turns": j.get("num_turns"), "is_error": j.get("is_error")})
+    except Exception:
+        usage["parse_error"] = True
+    results = json.load(open(p["results"])) if os.path.exists(p["results"]) else None
+    return results, usage, res.stdout[-2000:]
+
+
+def check_results(packet, results):
+    """GUARD 9 over every returned row. Pure -- no Google, no browser.
+
+    Returns (accepted, refused):
+      accepted: [(row_dict, coverage_dict, expected_entry)]
+      refused : [(name, reason)]
+    chars_read on every accepted row is REPLACED with the orchestrator's count.
+    """
+    workdir, nonce = packet["workdir"], packet["nonce"]
+    expected = json.load(open(os.path.join(workdir, f"expected_{nonce}.json")))
+    by_id = {f["file_id"] for f in packet["files"]}
+    accepted, refused = [], []
+    seen = set()
+    for r in results or []:
+        fid = r.get("file_id")
+        name = r.get("name") or fid
+        if fid not in by_id:
+            refused.append((name, "not in this packet")); continue
+        if fid in seen:
+            refused.append((name, "duplicate row")); continue
+        seen.add(fid)
+        e = expected[fid]
+        if str(r.get("opened", "")).lower() != "yes" and not str(r.get("not_opened_reason", "")).strip():
+            refused.append((name, "opened=no with no reason")); continue
+        try:
+            cov = H.guard_9_coverage(name, e["markers"], r.get("markers_seen") or [],
+                                     status=e["status"])
+        except H.Refusal as x:
+            refused.append((name, str(x))); continue
+        r = dict(r)
+        r["chars_read"] = e["chars"]                       # orchestrator's number
+        r["chunks_total"] = e["chunks"]
+        r["chunks_verified"] = e["chunks"] if cov["ok"] else 0
+        r["coverage_pct"] = cov["pct"]
+        accepted.append((r, cov, e))
+    for fid in by_id - seen:
+        refused.append((expected[fid]["name"] or fid, "no row returned for this file"))
+    return accepted, refused
 
 
 # ---------------------------------------------------------------- commit
 
-def commit(sid, results_path):
-    """Write finished rows back. One file per row, committed immediately.
+def commit(sid, results_path, packet_path=None):
+    """GUARD 9, then write finished rows back. One file per row.
 
-    Refuses a row that claims opened=no without a reason -- the ledger rule, at
-    the point of writing rather than at the end where it is too late.
+    Refuses: a row with no returned markers covering its file; a fabricated
+    marker; opened=no without a reason; a file in the packet with no row.
+    A refused file stays PENDING and is re-issued by the next `next`.
     """
+    import run_ledger as RL
+    results = json.load(open(results_path))
+    if packet_path is None:
+        # results_<nonce>.json sits beside packet_<nonce>.json
+        nonce = os.path.basename(results_path).replace("results_", "").replace(".json", "")
+        packet_path = os.path.join(os.path.dirname(results_path), f"packet_{nonce}.json")
+    packet = json.load(open(packet_path))
+    accepted, refused = check_results(packet, results)
+
     _, sh = svc()
+    ensure_tab(sh, sid)
     _, rows = read_rows(sh, sid)
-    res = json.load(open(results_path))
     now = datetime.datetime.now().isoformat(timespec="seconds")
-    data, bad = [], []
-    for r in res:
-        fid = r.get("file_id")
+    run = RL.open_run(f"index commit {packet['nonce']}", prefix="index")
+    data = []
+    for r, cov, e in accepted:
+        fid = r["file_id"]
         if fid not in rows:
-            bad.append((fid, "not in the index -- seed first")); continue
-        if str(r.get("opened", "")).lower() != "yes" and not str(
-                r.get("not_opened_reason", "")).strip():
-            bad.append((r.get("name", fid), "opened=no with no reason")); continue
+            refused.append((r.get("name", fid), "not in the index -- seed first")); continue
         rn, old = rows[fid]
         att = int(old[21]) + 1 if len(old) > 21 and str(old[21]).isdigit() else 1
-        data.append({"range": f"{TAB}!G{rn}:V{rn}", "values": [[
+        with run.step(f"index:{r.get('name','')[:40]}", intent="GUARD 9 + write row") as st:
+            st.read(r.get("name", fid), chars=e["chars"])
+            st.note(f"coverage {cov['pct']}% ({cov['seen']}/{cov['total']} markers)")
+            if str(r.get("opened", "")).lower() != "yes":
+                st.skip(r.get("name", fid), r.get("not_opened_reason", ""))
+            st.write(f"{TAB} row {rn}", rows=1)
+        data.append({"range": f"{TAB}!G{rn}:{LAST_COL}{rn}", "values": [[
             "DONE", r.get("opened", ""), r.get("not_opened_reason", ""),
             r.get("doc_type", ""), r.get("what_it_says", ""),
             r.get("key_entities", ""), r.get("key_dates", ""),
             r.get("priority", ""), r.get("priority_reason", ""),
             r.get("site_candidate", ""), r.get("proposed_section", ""),
-            r.get("extracted_to", ""), r.get("chars_read", 0),
-            r.get("indexed_by", "haiku-packet"), now, att]]})
-    if bad:
-        print("REFUSED:")
-        for n, why in bad:
-            print(f"   {n}: {why}")
+            r.get("extracted_to", ""), r["chars_read"],
+            r.get("indexed_by", "haiku-packet"), now, att,
+            r["chunks_total"], r["chunks_verified"], r["coverage_pct"]]]})
+    for n, why in refused:
+        with run.step(f"refused:{str(n)[:40]}", intent="GUARD 9") as st:
+            st.skip(n, why)
+    if refused:
+        print("REFUSED (row stays PENDING; re-issued by the next packet):")
+        for n, why in refused:
+            print(f"   {str(n)[:50]}: {why[:150]}")
     if data:
         sh.values().batchUpdate(spreadsheetId=sid, body={
             "valueInputOption": "RAW", "data": data}).execute()
-    print(f"committed : {len(data)} row(s) marked DONE")
+    print(f"committed : {len(data)} row(s) marked DONE   refused: {len(refused)}")
+    print(f"ledger    : {run.summary() if hasattr(run, 'summary') else 'written'}")
+    return len(data), len(refused)
 
 
 # ---------------------------------------------------------------- status
@@ -318,7 +507,13 @@ def status(sid):
     print(f"total files : {total}")
     print(f"done        : {len(done)}  ({100*len(done)//max(total,1)}%)")
     print(f"remaining   : {len(todo)}")
-    print(f"chars read  : {chars:,}")
+    print(f"chars read  : {chars:,}   (orchestrator-counted; v3.1)")
+    short = [r for r in done if len(r) > 24 and str(r[24]) not in ("", "100", "100.0")
+             and str(r[7]).lower() == "yes"]
+    if short:
+        print(f"COVERAGE < 100% on {len(short)} DONE row(s) -- should be impossible under GUARD 9:")
+        for r in short[:5]:
+            print(f"    {r[1][:50]}  {r[24]}%")
     print(f"priority    : {dict(sorted(pr.items()))}")
     print(f"unread (with reason): {len(unread)}")
     for r in unread[:8]:
@@ -338,6 +533,12 @@ if __name__ == "__main__":
     cmd = sys.argv[1]
     if cmd == "seed":    seed(sys.argv[2], sys.argv[3], "--yes" in sys.argv)
     elif cmd == "next":  next_packet(sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else 4)
-    elif cmd == "commit": commit(sys.argv[2], sys.argv[3])
+    elif cmd == "prompt": print(prompt_for(sys.argv[2]))
+    elif cmd == "agent":
+        res, usage, tail = run_agent(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "haiku")
+        print(json.dumps({"rows": None if res is None else len(res), "usage": usage}, indent=1))
+        if res is None:
+            print("agent produced no results file; stdout tail:\n" + tail); sys.exit(3)
+    elif cmd == "commit": commit(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else None)
     elif cmd == "status": status(sys.argv[2])
     else: print(__doc__); sys.exit(1)

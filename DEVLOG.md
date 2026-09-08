@@ -11,6 +11,177 @@ than no log because it still reads as authoritative.
 
 ________________
 
+## 2026-09-07 — Coverage is proven, not claimed: Indexer Spec v2.1, GUARD 9, the canary eval — and the Ruflo review
+
+Author: Claude Code (claude-fable-5-1) + Andrew Powers.
+
+**Ratified by Andrew, 2026-09-07**, in conversation, before any of it was built:
+*"this we need to fix, need to make sure everything was read so that the
+information system architect is making the decisions based on all the
+information right?"* and *"yes build items and ratify and make sure that we
+have the chunking and guardrail and the canary eval and regression test as u
+have explained it as the playbook's continuous eval play."* Two other rulings
+from the same conversation: **client credentials are OAuth as the user, not a
+service account** (his words: *"OAuth as the user."*); and the client package is
+**a repo first, converted to a plugin later**, laid out plugin-shaped from day one.
+
+### The defect, precisely
+
+`verify_index_integrity.py` compared the agent's reported `chars_read` to a
+re-derived extractor count. **But the packet had handed the agent that number.**
+An agent that read nothing could echo it and pass. The check proved the extractor
+was deterministic; it proved nothing about reading. The one v3 run on record
+(3 files, 259,926 chars, 34,146 tokens) cost roughly half the tokens its text
+implied, and nothing in the system could say whether the rest had been read.
+Andrew's framing, and it is the right one: *"the AI stopping the reading and
+saying it's done when it's only read a part … that is a form of lying."*
+Claude's reframing, recorded because it decides the fix: *"I have read the whole
+file"* is generated text unconstrained by whether reading happened, so demanding
+honesty cannot work; **making the claim checkable** can.
+
+**A second defect found while reading the extractor:** spreadsheets were read as
+`A1:AZ400`. Rows past 400 and columns past AZ were silently dropped and the file
+still reported `OPENED` with the smaller count. Skipping, in the deterministic
+layer where nobody was looking for it. Fixed — bare tab name returns the whole
+used range.
+
+**And a withdrawn proposal.** Claude had suggested a "format-aware digest" for
+spreadsheets (headers, counts, samples). Withdrawn in the same conversation as
+wrong under Andrew's rule that importance is an output of the index, not an
+input: a digest is a lossy transform and a lossy transform is a decision about
+what matters, made by code before the index runs. Andrew's counter-instinct
+("download it as CSV and read the whole thing") was right in aim; CSV does not
+shrink the content, so the answer is to prove full reading and treat cost as a
+budget question.
+
+### What was built (all committed)
+
+**`coverage.py`** — pure Python. `plant()` splits text into 12,000-char chunks
+and plants a random `⟦CHK:xxxxxx⟧` every 1,500 chars, regenerated per run; the
+expected list stays with the orchestrator, never in the packet. `coverage()` is
+arithmetic on what the agent *returned*. `orchestrator_chars()` is the only
+legitimate source of `chars_read`.
+
+**`harness.py` — GUARD 9, coverage is proven not claimed.** Refuses any missing
+or fabricated marker. Exempts no-text statuses (image, video, scanned PDF) only
+because those rows already carry `opened=no` + reason under GUARD 7. Browser
+imports made lazy so the guards load on a machine with no browser stack.
+
+**`indexer_v3.py` → v3.1.** `next` extracts, chunks, marks; the packet carries
+paths and no sizes. New `prompt` and `agent` commands: `agent` runs
+`claude -p … --allowedTools Read,Write` — **no Grep, no Bash, so the only way to
+see a marker is to read the chunk it sits in.** `commit` runs `check_results()`
+(GUARD 9 per row; `chars_read` overwritten with the orchestrator's count; a
+packet file with no row is refused; a refused file stays `PENDING` and is
+re-issued) and logs every row and every refusal to `RUN_DEVLOG`. Three columns
+appended to `DRIVE_INDEX`: `chunks_total`, `chunks_verified`, `coverage_pct`;
+existing tabs get the header extended in place. `/tmp` paths replaced with
+`~/.advisor_os/index_work`; the reader now lives beside the script.
+`AGENT_PROMPT` is a single constant so the eval tests the text production uses.
+
+**`verify_index_integrity.py`** — correction appended to its docstring: it
+catches the *wrong* file and cannot catch a *partial* read. Kept for the first
+case; not to be cited as proof of reading.
+
+**`.agents/evals/`** — the playbook's continuous-eval play.
+- `test_coverage_unit.py`: 40 deterministic checks, seconds, no model. Every
+  chunk marked (incl. 0, 1, 1499, 1500, 1501, 12001 chars); full read passes;
+  0/50/90/97% reads refused; fabricated marker refused; image exempt only with
+  reason; `chars_read` never from the agent; packet carries no counts; missing
+  row refused; prompt/eval share one text; marker presentation ignored;
+  monotone baseline holds.
+- `canary_partial_read.py`: a synthetic 90k-char document (all names and places
+  invented, stated in the file) with a distinctive fact at 93% and a control at
+  8%; the row must reflect the late fact. Then a **negative control** — same
+  design, agent told to read only the first chunk — and GUARD 9 must refuse. A
+  guard that never fires is indistinguishable from no guard. Appends to
+  `history.jsonl` with commit sha, model, tokens, cost.
+- `baseline.json`: counts that may never rise. `run.sh`: unit always,
+  `--with-model` for the canary.
+- `.githooks/pre-commit` runs the unit suite when a staged change touches the
+  indexer, coverage, harness, reader, evals, skills or `CLAUDE.md`
+  (`git config core.hooksPath .githooks`). `.github/workflows/agent-evals.yml`:
+  unit on every PR to those paths, canary nightly when a key is configured.
+
+### Measured — the canary on Haiku, 2026-09-07
+
+**Run 1: FAIL, instructively.** The agent read the whole file — both canaries
+found, 61 markers returned, 61 planted — and GUARD 9 refused it: *"61 markers
+never planted."* The agent had transcribed the ids as bare hex (`'4b2e32'`)
+and exact string equality failed. **A guard that refuses correct work is as
+broken as one that passes bad work.** Fixed: a marker's identity is its random
+hex, not its punctuation; brackets, spacing and case are presentation.
+Fabrication is still caught — an unknown hex is unknown however it is dressed.
+Unit test added for all four presentations. The negative control on run 1 had
+"passed" for the wrong reason (refused on presentation, not on missing
+markers) — which is exactly why the second run mattered.
+
+**Run 2: PASS.**
+
+| | positive | negative control |
+|---|---|---|
+| corpus | 90,151 chars · 8 chunks · 61 markers | 30,000 chars · 3 chunks · 21 markers |
+| result | **coverage 100%**, late canary found, early canary found | **refused at 38.1%** — 8/21 markers, 13 unread stretches |
+| turns / wall | 11 · 45.5 s | 4 · 31.0 s |
+| tokens | in 34 · out 4,239 · cache-read 127,498 | in 34 · out 2,312 · cache-read 115,399 |
+| cost | **$0.1047** | $0.0603 |
+
+Both lines are in `evals/history.jsonl` against commit `0c7a737`.
+
+**What the numbers say about cost.** `input_tokens` is 34; the volume is
+`cache_read` at 127k — the accumulated context re-read on each of 11 turns as
+chunks pile up. The chunk text itself is not the driver; **context growth
+across turns is.** About **$0.10 per 90k-char file on Haiku**, read in full and
+proven. For a client Drive that puts a 1,000-file index in the low tens of
+dollars — a budget question, no longer a truth question.
+
+### The Ruflo review (ruvnet/ruflo) — borrow two patterns, install nothing
+
+Read from a sparse clone of the repo, not from its README. Their **"harness"**
+(`.harness/`) is a supply-chain and MCP-security posture tool: signed manifests,
+threat models, `mcp-scan`. Their **"verification"** (`verification/`) is
+regression protection *for their own codebase* — Ed25519-signed witness
+manifests attesting that a documented fix's load-bearing line is still present.
+Their **"truth scoring"** — the part that sounds like Andrew's concern — is
+labelled in their own skill doc: *"partly shipped … and partly design — treat
+the CI Guards section as the authoritative current state."* Their hooks are
+routing, memory sync and session restore; the handler's own comment reads
+*"MUST NOT block."* Their `CLAUDE.md` is 1,493 lines and 167 headings against
+the playbook's "keep it under a page."
+
+Not installed, and not to be: a Node/Rust monorepo with 100+ agents, 35
+plugins, its own MCP server and 27 always-on hooks is the wrong shape for a
+client on a $20 Pro plan who needs Python and a browser, and its self-learning
+loop (SONA / ReasoningBank) adjusts behaviour from trajectories with no
+attribution — a tier promoting itself, by design.
+
+**Taken:** (1) the **monotone-decreasing baseline** — a count that may never
+rise, lowered deliberately after a fix (`evals/baseline.json`); (2) **marker
+substrings over hashes** — a specific unforgeable string is a better proof than
+a hash of a claim, which is the same shape as GUARD 9; (3) **append-only
+temporal history** so a regression can be dated (`evals/history.jsonl`); (4) the
+documentation habit of stating **"shipped vs aspirational"** plainly.
+
+### Principle extracted
+
+**A check that compares a claim to the source of the claim is not a check.**
+Prove from what was returned, never from what was reported. Appended to the
+Indexer Spec as v2.1 (repo: `docs/Indexer_Spec_Stage_1_v2_1_coverage_is_proven.md`;
+Drive Doc: correction section appended, both versions survive).
+
+### Open
+
+- `drive_indexer.py` still implements the v1.0 metadata-only contract; marked
+  superseded in the skill. Delete or rewrite is Andrew's call.
+- The canary runs on Haiku. Sonnet on the client's Pro account is the stated
+  target (memory: ISA must run on client Pro account); not yet measured.
+- Hooks for the Landing Rule and ratification gate (`.claude/settings.json`,
+  `PreToolUse`) — the deterministic layer for *Site builds* — are the next
+  build, agreed in principle, not yet started.
+
+
+________________
+
 ## 2026-08-28 → 2026-09-07 — Session: Automation for Google Sites
 
 Author: Claude Code (claude-opus-5) + Andrew Powers. Named by Andrew, 2026-09-07:
