@@ -4,3 +4,23 @@ service_account.json
 *.local.json
 .env
 .venv/
+
+# ---------------------------------------------------------------------------
+# SESSION TRANSCRIPTS AND EXPORTS NEVER GO IN GIT.
+#
+# A transcript holds whatever was discussed: client names, financials, folder
+# ids, anything pasted in. The client agreed to Google when they put their files
+# in Drive. They never agreed to GitHub, and a client who cannot audit where
+# their data went cannot meaningfully consent to it being there.
+#
+# This is the same category as service_account.json and .env. The repository
+# ships the TOOL; the data stays on the machine that made it. Default output is
+# ~/.advisor_os/session_exports/, outside any repo, for this reason.
+#
+# If you ever need to share one, put it in the CLIENT's Drive -- that introduces
+# no new party and they can delete it.
+transcripts/
+session_exports/
+*.transcript.md
+*.session.md
+*.ledger.md

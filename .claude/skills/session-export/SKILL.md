@@ -10,6 +10,27 @@ Nothing is lost when a session dies. **Never ask the user to copy and paste a
 conversation** — the file is already on disk, and it holds more than was ever on
 their screen.
 
+## Where output goes — this is a data-handling rule, not a preference
+
+**Exports and ledgers never go in git.** A transcript holds whatever was
+discussed: client names, financials, folder ids, anything pasted in.
+
+The argument is not that GitHub is untrustworthy. It is that **the data is not
+yours to place.** A client agreed to Google when they put their files in Drive.
+They never agreed to GitHub, and a client who cannot audit where their data went
+cannot meaningfully consent to it being there. Same category as
+`service_account.json` — the repository ships the *tool*, never the data.
+
+- A **bare filename** writes to `~/.advisor_os/session_exports/`, outside any repo.
+- A **path inside a git working tree** is written but **warns loudly**. It warns
+  rather than refuses because there are legitimate reasons to write into a repo
+  that ignores the path; silence is the thing worth preventing.
+- `.gitignore` covers `transcripts/`, `session_exports/`, `*.ledger.md`,
+  `*.transcript.md`, `*.session.md` as a second layer.
+
+If one must be shared, put it in **the client's own Drive** — that introduces no
+new party and they can delete it.
+
 ## The size problem — read this before running anything
 
 A single session here reaches **15 MB, roughly 4 million tokens.** It does not

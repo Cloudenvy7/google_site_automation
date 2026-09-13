@@ -109,6 +109,49 @@ def resolve(token):
     return [], "unresolved"
 
 
+DEFAULT_OUT_DIR = os.path.expanduser("~/.advisor_os/session_exports")
+
+
+def _in_git_repo(path):
+    """Walk up looking for .git. Cheap, no subprocess, works on a bare path."""
+    d = os.path.dirname(os.path.abspath(path)) or os.getcwd()
+    while True:
+        if os.path.exists(os.path.join(d, ".git")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+
+
+def resolve_out(out):
+    """Where to write, defaulting OUTSIDE any repository.
+
+    A transcript holds whatever was discussed -- client names, financials, folder
+    ids. The client agreed to Google when they put their files in Drive; they
+    never agreed to GitHub. So the default lands in ~/.advisor_os/, and aiming at
+    a working tree gets a warning rather than silence.
+
+    It warns rather than refuses: there are legitimate reasons to write into a
+    repo that gitignores the path. Silence is the thing worth preventing.
+    """
+    if not out:
+        return None
+    if not os.path.dirname(out):
+        os.makedirs(DEFAULT_OUT_DIR, exist_ok=True)
+        return os.path.join(DEFAULT_OUT_DIR, out)
+    repo = _in_git_repo(out)
+    if repo:
+        sys.stderr.write(
+            "\n  !! WARNING: writing into a git working tree:\n"
+            "     %s\n"
+            "     Transcripts and ledgers must not be committed -- they carry\n"
+            "     whatever was discussed. Confirm .gitignore covers this path,\n"
+            "     or pass a bare filename to use %s\n\n"
+            % (repo, DEFAULT_OUT_DIR))
+    return out
+
+
 def blocks(msg):
     c = msg.get("content")
     if isinstance(c, str):
@@ -219,6 +262,7 @@ def main():
                     help="if the token matches several, export them all, oldest first")
     ap.add_argument("--result-chars", type=int, default=800)
     a = ap.parse_args()
+    a.out = resolve_out(a.out)   # every write path, not just the first
 
     if a.list or not a.session:
         rows = sessions()

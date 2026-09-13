@@ -129,6 +129,13 @@ drifts, and a drifted tool still runs.
 Set `SESSION_EXPORT_USER` in `.env` if you want your own name as the speaker
 label instead of `$USER`.
 
+> **On session exports and client data.** `session-export` writes to
+> `~/.advisor_os/session_exports/` by default, deliberately outside any
+> repository. Transcripts are not work product — they are a record of everything
+> discussed, and they belong on the machine that made them or in the client's own
+> Drive. Never commit one. `.gitignore` covers the usual paths and the tools warn
+> when aimed at a working tree, but neither substitutes for the judgement.
+
 ## 8. Known limits, stated plainly
 
 **Credentials are a service account, not the user.** The ratified direction is
