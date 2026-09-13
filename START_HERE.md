@@ -108,6 +108,21 @@ a human can edit: it stops an agent from drifting, not a person from deciding.
 run things with Bash. The hook matches only Bash, so a heredoc that patches the
 hook — or a test that quotes a Site write — is refused as if it were the write.
 
+## Checking a past session — `session-export`
+
+[`.claude/skills/session-export/`](.claude/skills/session-export/) — two tools
+over the local Claude Code transcripts in `~/.claude/projects/`.
+
+| | |
+|---|---|
+| `export_session.py` | Renders a session to markdown at four levels. **Never ask a human to copy and paste a conversation** — the transcript is on disk and holds more than was on screen. Do not `cat` one: a session reaches 15 MB, roughly 4M tokens. |
+| `audit_session.py` | **The ledger: what was promised, what was claimed done, and the evidence under each.** §1 is mechanical — commits with no push after them. It found four commits stranded on a disposable branch for five days, unaided. |
+
+**The ledger is the claim; git, the files, the Sheet and the Site are the truth.**
+Checks run ledger → reality, never the reverse. An audit is not an eval — it has
+no expected answer. But **audits generate evals**: anything an audit finds once
+should become a deterministic check that catches it forever.
+
 ## The catalogue template
 
 [`catalogue_template/`](catalogue_template/) — the 11 tabs of

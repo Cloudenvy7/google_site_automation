@@ -113,7 +113,23 @@ does **not** decide ratification — a human records that in the catalogue — i
 only checks it was done. The build hook refuses to open the door without a fresh
 stamp reading `RATIFIED`.
 
-## 7. Known limits, stated plainly
+## 7. Optional — make the session tools available everywhere
+
+`.claude/skills/session-export/` works as soon as you open this repo. To use it
+in *every* project on the machine, link it into the global skills directory:
+
+```bash
+mkdir -p ~/.claude/skills
+ln -s "$PWD/.claude/skills/session-export" ~/.claude/skills/session-export
+```
+
+A symlink rather than a copy, deliberately: a copy is a second version that
+drifts, and a drifted tool still runs.
+
+Set `SESSION_EXPORT_USER` in `.env` if you want your own name as the speaker
+label instead of `$USER`.
+
+## 8. Known limits, stated plainly
 
 **Credentials are a service account, not the user.** The ratified direction is
 *"OAuth as the user"* (DEVLOG, 2026-09-07) so a client runs against their own
