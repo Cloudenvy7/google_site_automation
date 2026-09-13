@@ -11,6 +11,142 @@ than no log because it still reads as authoritative.
 
 ________________
 
+## 2026-09-13 (later) — Auditing what a session claimed, and the Drive upload that was never broken the way we said
+
+Author: Claude Code (claude-opus-5) + Andrew Powers. Two things, connected by
+one theme: **a step that reports success and delivers nothing.**
+
+### 1. The claim that expired
+
+Reviewing what was actually pushed turned up four commits from 2026-09-08 that
+had never left the machine. The session that made them had said, at 11:21 UTC:
+
+> *"Both repos clean and pushed, everything green. Yes — we're done."*
+
+**That was true when written.** Work then resumed five hours later and produced
+`8505b45`, `c2291f7`, `ac6553a`, `770f586`. None were pushed. 991 lines sat on a
+disposable worktree branch for five days.
+
+Nobody lied. The claim **expired**, and nothing re-checked it. A DEVLOG written
+from that session would have faithfully recorded "both repos pushed."
+
+### 2. `session-export` — the ledger, and why it is not an eval
+
+Two tools, now at `.claude/skills/session-export/` in `google_site_automation`.
+
+`export_session.py` renders a local transcript to markdown at four levels.
+Nothing is lost when a session dies — the JSONL is on disk and holds more than
+was on screen. Andrew had twice rebuilt one **by hand** into a Google Doc so a
+fresh session could check claims against artifacts. That check is worth keeping;
+the copying is not.
+
+`audit_session.py` emits the ledger: intents, completion claims, the tool
+results under each, and what happened afterwards. **§1 is mechanical and needs
+no model** — commits with no push after them. Pointed at the 09-08 session it
+found all four unaided.
+
+**Andrew's reading, corrected in conversation and recorded because the
+distinction is load-bearing:**
+
+- *The ledger is not "what happened."* It is what the session **claimed**,
+  joined to the evidence it showed. Truth is git, the files, the Sheet, the
+  Site. Checks run ledger → reality, never the reverse. Treating the ledger as
+  the record rebuilds the problem it exists to catch.
+- *Multi-agent review is the weakest check, not the strongest.* Ordered by
+  strength: deterministic (git, file exists, `evals/run.sh`, a live probe) →
+  fresh-context agent grounded in artifacts → a different model. The hook and
+  the evals caught real defects today; neither is a model. Andrew's call:
+  **no second model** — *"we already have a solid method."*
+- *An audit is not an eval.* An audit is retrospective, one-off, has no expected
+  answer. An eval is repeatable, has a right answer, fails loudly. **Audits
+  generate evals**: §1 began as a hand finding this morning and is now mechanical.
+
+Two failed iterations are kept in the SKILL.md. v1 checked "the last claim of
+any kind" and **missed the failure it was written for** — the last claim there
+was *"9 files, verified as real images"*, true and irrelevant. v2 flagged all 117
+mutating actions after a settlement claim: correct, unreadable. *A check too
+broad to read is not a check.*
+
+### 3. Transcripts never go in git — Andrew's ruling
+
+Andrew, on shipping this to clients: he does not want transcripts on GitHub, and
+would rather they sit on the client's own machine or in the client's Drive.
+
+Two of his premises were wrong and are corrected: a private repo is **not** open
+to the world, and Google Drive is **not** more private than GitHub in a technical
+sense — both can be compelled.
+
+**The argument that does hold** is stronger than either: the data is not ours to
+place. A client agreed to Google when they put their files in Drive. They never
+agreed to GitHub, and *a client who cannot audit where their data went cannot
+meaningfully consent to it being there.* Drive introduces **no new party** and
+they can delete it.
+
+Claude had suggested a committed `transcripts/` directory two turns earlier.
+**Retracted** — it flagged the scrub problem as a caveat when it was the wrong
+default. Now: a bare `--out` filename lands in `~/.advisor_os/session_exports/`,
+a path inside a working tree is written but **warns**, and `.gitignore` covers
+`transcripts/`, `session_exports/`, `*.ledger.md`. It warns rather than refuses
+because writing into a repo that ignores the path is legitimate; **silence** was
+what needed preventing.
+
+### 4. `upload_to_drive.py` — wrong diagnosis, corrected by testing
+
+Recorded 09-08 as *"the chooser arms and Drive never ingests."* Andrew: *"want
+upload to drive tested becuase we need that working."*
+
+Reproduced it first: 0/9. Then took it apart.
+
+- The service account still gets **404** on the target folder — never shared with
+  it. A probe upload into the Blackfox Studios **shared drive** succeeded, so the
+  SA can upload; it also revealed `canDelete: false, canTrash: true`, so the
+  probe file had to be trashed rather than deleted.
+- Drive builds **no** `input[type=file]` in the DOM (count: 0), confirming the
+  native-dialog claim. CDP interception is the only path.
+- `Page.fileChooserOpened` **fires**. `DOM.setFileInputFiles` returns no error.
+  Handing over **one** path lands the file every time.
+- Handing over **nine** lands nothing. Same folder, same account, same session,
+  same code path — only the count differs.
+
+**So the 09-08 note was right about the symptom and wrong about the cause.** It
+is not the handoff; it is the *multi-file* handoff. The difference matters
+because the first reading implicates CDP interception, which works fine — and
+that reading is why the script sat untouched for five days.
+
+One wrong turn recorded too: Claude first concluded the *menu item was never
+found*, from a test that clicked `New` while the menu was already open from the
+prior run, closing it. The item is there — `File upload Alt+C then U` at
+(176,144). **A probe that disturbs the state it is probing is not a probe.**
+
+Fixed: one file per chooser cycle, `Escape` between cycles to clear stale menu
+state, and **each file confirmed present before the next is attempted** — because
+the failure being guarded against reports success, so a count at the end cannot
+distinguish a working run from a silent one.
+
+A second defect found by rerunning: the first fix returned a bool from
+`_present()`, so a rerun over a full folder wrote an **empty** `_drive_ids.json`,
+destroying the ids the sheet's `Flyer Embed URL` column needs. Now returns the
+row, and a SKIP records its id. *A second run must never leave less than the
+first.*
+
+**Verified:** all 9 flyers in `Google Site - Flyers and ScreenShoots`, confirmed
+by independent read-back after a full page reload — not by the same JS that
+reported success. Rerun: 9 skipped, 0 duplicated, all 9 ids captured.
+
+### Open
+
+1. **OAuth as the user** (ratified 2026-09-07) is still unbuilt. Clients still
+   need their own service account.
+2. **Nobody has cloned the repo onto a second machine.** Every check ran where
+   the code was written. *Maker is never checker* — portability stays a claim.
+3. The flyer ids are captured but **not yet written** to the Workshops sheet's
+   `Flyer Embed URL` column.
+4. The Highline waiver expires **2026-09-30**.
+
+*Mirrored into `advisor-os/07_Changelog/DEVLOG.md`, which stays canonical.*
+
+________________
+
 ## 2026-09-13 — Make the repository portable: it documented a system that only ran on one machine
 
 Author: Claude Code (claude-opus-5) + Andrew Powers. Andrew, 2026-09-13:

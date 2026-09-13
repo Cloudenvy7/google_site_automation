@@ -23,6 +23,7 @@ import os
 import sys
 import time
 
+import chrome_automation as C
 import drive_upload as D
 import sites_automation as S
 
@@ -92,7 +93,61 @@ def open_new_menu(ws):
     return False
 
 
+def _row_for(ws, base):
+    """The folder row matching this filename, or None.
+
+    Returns the row rather than a bool so a SKIP still yields the file id. The
+    first version returned a bool, and a rerun over an already-full folder wrote
+    an empty _drive_ids.json -- destroying the ids the sheet's Flyer Embed URL
+    column needs. A second run must never leave less than the first.
+    """
+    stem = os.path.splitext(base)[0][:46]
+    for e in listing(ws):
+        if base[:46] in e["label"] or stem in e["label"]:
+            return e
+    return None
+
+
+def _present(ws, base):
+    return _row_for(ws, base) is not None
+
+
+def _reset_menu(ws):
+    """Escape any menu left open.
+
+    Two chooser cycles back to back otherwise find the New menu already open,
+    and the click meant to open it closes it instead -- which surfaces as
+    'no File upload item found by text', i.e. as a missing control rather than
+    as the state problem it is.
+    """
+    for t in ("keyDown", "keyUp"):
+        C.send_ws_cmd(ws, "Input.dispatchKeyEvent",
+                      {"type": t, "key": "Escape", "windowsVirtualKeyCode": 27})
+    time.sleep(1)
+
+
 def main(folder_id, src_dir, u=1):
+    """Upload one file per chooser cycle, verifying each before the next.
+
+    WHY ONE AT A TIME (2026-09-13, after this sat recorded as broken since 09-08)
+    The original handed all nine paths to a single DOM.setFileInputFiles call.
+    Every observable step reported success: the menu item was found and clicked,
+    Page.fileChooserOpened fired, setFileInputFiles returned no error, and the
+    script printed "files handed to Drive". Drive ingested NOTHING. Nine files,
+    zero landed, no error anywhere.
+
+    Handing over a single path lands it every time. Same folder, same account,
+    same session, same code path -- only the count differs.
+
+    So the 09-08 note that "the chooser arms and Drive never ingests" was right
+    about the symptom and wrong about the cause. It is not the handoff. It is the
+    MULTI-FILE handoff, and the difference matters because the first reading
+    implicates CDP interception, which works fine.
+
+    The failure mode is the dangerous kind -- silent success -- which is why each
+    file is confirmed present before the next is attempted, rather than uploading
+    nine and counting at the end.
+    """
     src_dir = os.path.expanduser(src_dir)
     paths = sorted(os.path.join(src_dir, f) for f in os.listdir(src_dir)
                    if not f.startswith("_") and
@@ -103,38 +158,46 @@ def main(folder_id, src_dir, u=1):
 
     ws, _ = S.attach(f"https://drive.google.com/drive/u/{u}/folders/{folder_id}")
     time.sleep(9)
-    before = {e["id"] for e in listing(ws)}
-    print(f"folder already lists {len(before)} item(s)\n")
+    print(f"folder already lists {len(listing(ws))} item(s)\n")
 
-    res = D.upload_via_file_chooser(ws, lambda: open_new_menu(ws), paths, timeout=45)
-    if res != "FILES_SET":
-        print(f"UPLOAD FAILED: {res}")
-        return 2
-    print("files handed to Drive; waiting for the listing to settle")
+    # ONE FILE PER CHOOSER CYCLE. See the docstring for why.
+    found, missing = {}, []
+    for path in paths:
+        base = os.path.basename(path)
+        row = _row_for(ws, base)
+        if row:
+            found[base] = row["id"]          # record the id even when skipping
+            print(f"  SKIP  {row['id'][:24]}  {base[:48]}")
+            continue
 
-    want = {os.path.basename(p) for p in paths}
-    found, waited = {}, 0
-    while waited < 180:
-        time.sleep(6); waited += 6
-        for e in listing(ws):
-            for w in want:
-                # Match on containment, not prefix: a row's text carries the
-                # name plus type, owner and date in an order Drive chooses.
-                stem = os.path.splitext(w)[0][:46]
-                if w not in found and (stem in e["label"] or w[:46] in e["label"]):
-                    found[w] = e["id"]
-        print(f"   {len(found)}/{len(want)} visible after {waited}s")
-        if len(found) == len(want):
-            break
+        _reset_menu(ws)
+        res = D.upload_via_file_chooser(ws, lambda: open_new_menu(ws), [path], timeout=30)
+        if res != "FILES_SET":
+            print(f"  FAILED ({res})  {base[:42]}")
+            missing.append(base)
+            continue
 
-    missing = sorted(want - set(found))
-    for w in sorted(found):
-        print(f"  OK  {found[w]}  {w[:58]}")
-    for m in missing:
-        print(f"  MISSING (not in the listing)  {m[:58]}")
+        # Confirm THIS file before attempting the next. The failure being
+        # guarded against reports success and delivers nothing, so a count at
+        # the end cannot tell a working run from a silent one.
+        landed = False
+        for _ in range(12):                       # up to 60s per file
+            time.sleep(5)
+            if _present(ws, base):
+                landed = True
+                break
+        if landed:
+            row = _row_for(ws, base)
+            if row:
+                found[base] = row["id"]
+            print(f"  OK    {found.get(base, '?')[:24]}  {base[:50]}")
+        else:
+            print(f"  LOST (handed over, never appeared)  {base[:40]}")
+            missing.append(base)
+
     out = os.path.join(src_dir, "_drive_ids.json")
     json.dump(found, open(out, "w"), indent=1)
-    print(f"\n{len(found)}/{len(want)} uploaded and visible -> {out}")
+    print(f"\n{len(found)} landed, {len(missing)} failed -> {out}")
     return 0 if not missing else 4
 
 
