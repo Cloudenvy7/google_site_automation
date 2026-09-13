@@ -23,6 +23,7 @@ import json
 import os
 import re
 import time
+import config
 
 # Browser modules are imported lazily. GUARD 9 and the gates are used by the
 # indexer and by the eval suite, which must load without a browser stack.
@@ -396,8 +397,7 @@ def _tabs_from_sheet(catalogue_id):
     to Google; the hook reads the stamp it leaves behind and stays offline."""
     import google.oauth2.service_account as sa
     from googleapiclient.discovery import build
-    key = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", os.environ.get("ADVISOR_SA",
-              "/home/tyler/Projects/Blackfox Studios/service_account.json"))
+    key = config.service_account_path()
     c = sa.Credentials.from_service_account_file(
         key, scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
     sh = build("sheets", "v4", credentials=c).spreadsheets()

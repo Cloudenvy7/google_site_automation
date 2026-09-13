@@ -11,6 +11,129 @@ than no log because it still reads as authoritative.
 
 ________________
 
+## 2026-09-13 — Make the repository portable: it documented a system that only ran on one machine
+
+Author: Claude Code (claude-opus-5) + Andrew Powers. Andrew, 2026-09-13:
+*"yeah fix the stand alone google site automation repo becuase that is where
+everythign is actually supposed to go"* — ratifying this repo, not
+`advisor-os`, as the thing a client clones.
+
+### What prompted it
+
+A review of what was actually pushed, against the goal Andrew stated: *"pull
+onto a new computer and run it on the claude account of the user and computer
+so they can run it on their own accounts claude and google."*
+
+The doctrine layer was complete and the code worked. **Neither fact survived
+leaving this machine.** The gap was not in what the system does; it was that
+nothing in the repository had ever been executed anywhere else, so every
+machine-specific assumption was still load-bearing and invisible.
+
+### 1. Four scripts existed only on this laptop
+
+The 2026-09-08 Highline StartZone build — `site_survey.py`,
+`build_workshops.py`, `fetch_flyers.py`, `upload_to_drive.py`, 991 lines —
+was committed to a Claude worktree branch and never pushed anywhere. Five days.
+That branch is disposable by design; a cleanup would have taken the second-site
+proof with it.
+
+Pushed to `advisor-os` (`375b756..770f586`), then brought into this repo.
+
+*The lesson is not "remember to push." It is that work living only on a branch
+named after an ephemeral worktree is work that nothing is protecting.*
+
+### 2. The skill was in a folder Claude Code does not read
+
+`skills/information_systems_architecture/SKILL.md`. Claude Code discovers
+skills under `.claude/skills/` only. A client cloning this repo would get the
+ISA procedure as an inert file — **the governance model's entire enforcement of
+stage order, silently absent**, with nothing to signal it.
+
+Moved to `.claude/skills/`. Verified by the skill loading in-session.
+
+### 3. There was no `CLAUDE.md`
+
+`advisor-os` has one and it is the reason a session there starts grounded. This
+repo had `START_HERE.md`, which is good and which nothing made an agent read.
+
+Added, covering the Landing Rule, stage order, the six non-negotiables, and the
+hook's refusal behaviour. **It is not a copy of the advisor-os one** — that file
+governs the practice OS; this one governs a Site build.
+
+### 4. Seven files named one person's home directory
+
+`/home/tyler/Projects/Blackfox Studios/...` as a literal default in
+`harness.py`, `indexer_v3.py`, `read_drive_file.py`, `drive_indexer.py`,
+`merge_index_pass_b.py`, `verify_index_integrity.py`, `evals/run.sh`.
+
+Four were env-overridable. **Two were not** — `drive_indexer.py` and
+`merge_index_pass_b.py` had no override at all, so on a clone there was no way
+to run them without editing source.
+
+Worse: `merge_index_pass_b.py` hard-coded **HopeLink's catalogue id** and wrote
+to it. On a client's machine that is not a crash. It is a successful write into
+the wrong client's spreadsheet.
+
+New `scripts/config.py` resolves all of it, most-explicit-first, and **raises
+naming every location it looked in** rather than guessing. `catalogue_id()` has
+no default and must not acquire one.
+
+### 5. A regression I introduced, and how it surfaced
+
+Moving the credential lookup to `config.service_account_path()` at module level
+made `indexer_v3.py` **raise on import** — breaking the coverage eval, which
+imports it to test pure functions. It had not raised before only because the
+hard-coded path made it silently wrong instead of loudly absent.
+
+Caught by running the evals, not by reading the diff. Fixed by resolving inside
+the functions that need Google. *Importing a module must never require a
+credential.*
+
+### 6. The skill pointed clients at a Drive folder they cannot reach
+
+`SKILL.md` step 1 resolves eleven governing documents by Drive id, from the
+Blackfox Studios shared drive, via a service account granted to it. On a client
+machine that is eleven 404s.
+
+`docs/` already mirrors all eleven. Recorded as a visible **CORRECTION**
+appended below the table, not an edit — the original is correct in `advisor-os`
+where it was written, and the difference between the two repos is itself the
+thing worth knowing. Same correction covers `.agents/scripts/` → `scripts/`.
+
+### 7. Packaging
+
+`requirements.txt` (three direct deps, lower bounds, proven on Python 3.13.5),
+`.env.example`, `SETUP.md`, and `scripts/launch_chrome.sh` — which refuses
+quietly-wrong setups by warning when `DBUS_SESSION_BUS_ADDRESS` is unset, the
+condition that makes a signed-in Chrome present as signed out.
+
+`SETUP.md` states the service-account limit plainly rather than burying it:
+Andrew ratified *"OAuth as the user"* on 2026-09-07 and **it is not built.**
+
+### Verified
+
+| | |
+|---|---|
+| `evals/run.sh` | ALL PASS — 40 coverage + 35 hook cases |
+| Import without any credential | clean, all modules |
+| Missing / wrong credential | raises, names every path searched |
+| Drive + Sheets via `config.py` | 14 docs, 11 catalogue tabs |
+| `site_survey.py` from new layout | OK — account, 3 pages, 27 cells |
+| Live `PreToolUse` refusal | blocked an out-of-door write, logged `12:11:41` |
+
+### Open
+
+1. **OAuth as the user is still unbuilt.** Until it is, a client needs their own
+   service account and must share folders with it explicitly — link-sharing does
+   not grant service accounts.
+2. **No one has actually cloned this onto a second machine.** Every check above
+   ran on the machine the code was written on, with its dependencies already
+   installed. *Maker is never checker* — the portability claim is not proven
+   until a clone runs somewhere else.
+3. `upload_to_drive.py` still does not work — chooser arms, Drive never ingests.
+4. This entry must be mirrored into `advisor-os/07_Changelog/DEVLOG.md`.
+
+
 ## 2026-09-07/08 — The deterministic layer for Site builds: `PreToolUse` hook, preflight stamp, and three failures the hook found in its own author
 
 Author: Claude Code (claude-fable-5-1) + Andrew Powers. Andrew, 2026-09-07:

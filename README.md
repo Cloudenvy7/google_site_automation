@@ -17,9 +17,9 @@ Sheets and Sites are.
 
 Then:
 
-1. **`skills/information_systems_architecture/SKILL.md`** — the procedure. Load
+1. **`.claude/skills/information_systems_architecture/SKILL.md`** — the procedure. Load
    it before touching a Site or a client Drive folder.
-2. **`skills/information_systems_architecture/references/FIRST_TRY_CHECKLIST.md`**
+2. **`.claude/skills/information_systems_architecture/references/FIRST_TRY_CHECKLIST.md`**
    — read before placing a single block. Every line on it cost at least one
    rebuild.
 3. **`DEVLOG.md`** — what was built 2026-08-28 → 09-07, including the failures
@@ -32,7 +32,7 @@ Then:
 | `docs/` | The 11 governing documents, mirrored from the Google Sites Automation Drive folder. Each carries its Drive ID; **the Doc is canonical.** |
 | `catalogue_template/` | The 11 tabs of the per-site catalogue template as CSV, so the schema is diffable. Copy the Sheet, don't rebuild from these. |
 | `scripts/` | The executable half — CDP write path, harness, indexers, ledger, extractors. |
-| `skills/` | The ISA skill: procedure plus three references. |
+| `.claude/skills/` | The ISA skill: procedure plus three references. Under `.claude/` so Claude Code discovers and loads it. |
 | `evals/` | Coverage unit tests (every commit) and the canary eval (on demand / nightly). See `START_HERE.md`. |
 | `DEVLOG.md` | What was built, what failed, what each failure produced. |
 
@@ -149,8 +149,12 @@ These are measured, not assumed. The full list is in `FIRST_TRY_CHECKLIST.md`.
 
 ## Requirements
 
-Python 3, `websocket-client`, `google-api-python-client`,
-`google-auth`, and a Chrome running with `--remote-debugging-port=9222` under an
-authenticated Google session. A service account with Drive and Sheets scopes is
-required for the indexers; its key file is **not** in this repo and never should
-be.
+See **[`SETUP.md`](SETUP.md)** for the full procedure — creating your own service
+account, sharing folders with it, and launching Chrome correctly.
+
+In short: Python 3 and `pip install -r requirements.txt` (`websocket-client`,
+`google-api-python-client`, `google-auth`), plus a Chrome on
+`--remote-debugging-port=9222` under an authenticated Google session —
+`./scripts/launch_chrome.sh`, run from your own terminal. A service account with
+Drive and Sheets access is required for the indexers; its key is **not** in this
+repo and never should be.

@@ -62,6 +62,24 @@ with the service account (`drive.files.export_media`), not the MCP connector.
 | BFS Block Catalogue | `15_eyJizpy6TqZFOV5P4xT5LhxxxbI7FzuluPrkNaJ4s` |
 | Indexer Spec (stage 1) | `1kABU-BCwXsXWHz8YmnCmbZPdYfjqPydHwlFSJihexuo` |
 
+> **CORRECTION 2026-09-13 — where to read the doctrine in this repository.**
+> The table above resolves only from the Blackfox Studios shared drive, with a
+> service account that has been granted it. On a client's machine neither holds,
+> and following it literally yields HTTP 404 on every row.
+>
+> **In this repository, `docs/` is the source and it is complete** — all eleven
+> documents above, exported as markdown, each carrying its Drive id and export
+> date. Read those. Use the Drive ids only when you can actually reach that
+> drive, in which case the Doc is canonical and `docs/` is the mirror.
+>
+> **Script paths:** this repository keeps them in `scripts/`, not
+> `.agents/scripts/` as written below. That path is correct in the `advisor-os`
+> repository, where this skill was first written, and wrong here.
+>
+> Both are recorded rather than edited away, because the original text is
+> accurate in its own repository and the difference between the two is itself
+> the thing worth knowing.
+
 Also read, in this folder:
 - `references/ARCHITECTURE_PRINCIPLES.md` — what makes an architecture correct.
 - `references/FIRST_TRY_CHECKLIST.md` — the specific mistakes, and their fixes.

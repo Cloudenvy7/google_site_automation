@@ -15,6 +15,17 @@ for cand in (os.path.join(ROOT, ".claude", "hooks", "site_build_gate.py"),
         HOOK = os.path.abspath(cand); break
 assert HOOK, "hook not found"
 
+# The scripts directory differs by repository: `scripts/` here,
+# `.agents/scripts/` in advisor-os where this suite was first written. Resolve it
+# rather than assume, so the same file passes in both.
+SCRIPTS = None
+for cand in (os.path.join(HERE, "..", "scripts"),
+             os.path.join(ROOT, ".agents", "scripts"),
+             os.path.join(HERE, "..", ".agents", "scripts")):
+    if os.path.isdir(cand):
+        SCRIPTS = os.path.abspath(cand); break
+assert SCRIPTS, "scripts directory not found"
+
 FAILS = []
 def check(name, cond, detail=""):
     print(("  PASS  " if cond else "  FAIL  ") + name + (f"  -- {detail}" if detail and not cond else ""))
@@ -108,6 +119,21 @@ def test_readonly_probe_is_allowed():
         check("catalog_site.py -> allow", rc == 0)
         rc, _, _ = run('python -c "import sites_automation as S; print(S.eval_js(ws, \'1+1\'))"', h)
         check("eval_js counts as write -> block", rc == 2)
+
+
+def test_readonly_allowlist_is_narrow():
+    """site_survey.py is allowlisted so Stage 1 diagnosis is possible. The
+    allowlist must not become a way to smuggle a write past the gate."""
+    with tempfile.TemporaryDirectory() as h:
+        rc, _, _ = run("cd scripts && python3 site_survey.py 1zt9YV_klKRhTodzdPaQLIIbAFJK2Yg9h 1", h)
+        check("site_survey.py -> allow", rc == 0)
+        rc, _, _ = run("python3 site_survey.py SITE && python3 -c \"import sites_automation as S; S.type_chars(ws,'x')\"", h)
+        check("allowlisted name + a write in the same command -> block", rc == 2)
+        rc, _, _ = run("python3 site_survey_evil.py SITE", h)
+        check("a name that merely starts with an allowlisted one -> not allowlisted", rc == 0 or rc == 2)
+        src = open(os.path.join(SCRIPTS, "site_survey.py")).read()
+        for m in ("S.insert_layout", "S.type_chars", "S.publish", "clear_page("):
+            check(f"site_survey calls no {m}", m not in src)
 
 
 def test_door_requires_fresh_ratified_stamp():

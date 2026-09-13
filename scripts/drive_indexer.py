@@ -20,8 +20,8 @@ import sys
 
 import google.oauth2.service_account as sa
 from googleapiclient.discovery import build
+import config
 
-SA = "/home/tyler/Projects/Blackfox Studios/service_account.json"
 SCOPES = ["https://www.googleapis.com/auth/drive",
           "https://www.googleapis.com/auth/spreadsheets"]
 
@@ -92,7 +92,9 @@ def crawl(dr, root_id, root_name, max_depth=6):
 
 
 def main(folder_id, catalogue_id):
-    creds = sa.Credentials.from_service_account_file(SA, scopes=SCOPES)
+    # Resolved here, not at import -- see indexer_v3.py.
+    creds = sa.Credentials.from_service_account_file(
+        config.service_account_path(), scopes=SCOPES)
     dr = build("drive", "v3", credentials=creds)
     sh = build("sheets", "v4", credentials=creds).spreadsheets()
 

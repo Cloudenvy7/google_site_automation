@@ -11,9 +11,9 @@ socket.setdefaulttimeout(300)
 import google.oauth2.service_account as sa
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
+import config
 
-SA = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON",
-                    "/home/tyler/Projects/Blackfox Studios/service_account.json")
+SA = config.service_account_path()
 creds = sa.Credentials.from_service_account_file(SA, scopes=[
     "https://www.googleapis.com/auth/drive.readonly",
     "https://www.googleapis.com/auth/spreadsheets.readonly"])

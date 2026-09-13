@@ -61,10 +61,9 @@ from googleapiclient.discovery import build
 
 import coverage as cv
 import harness as H
+import config
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SA = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", os.environ.get("ADVISOR_SA",
-                    "/home/tyler/Projects/Blackfox Studios/service_account.json"))
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly",
           "https://www.googleapis.com/auth/spreadsheets"]
 TAB = "DRIVE_INDEX"
@@ -103,7 +102,10 @@ Never leave not_opened_reason blank when opened is "no". Never report a file as 
 
 
 def svc():
-    c = sa.Credentials.from_service_account_file(SA, scopes=SCOPES)
+    # Resolved here, not at import: importing this module must not require a
+    # credential. The eval suite imports it to test pure functions.
+    c = sa.Credentials.from_service_account_file(
+        config.service_account_path(), scopes=SCOPES)
     return (build("drive", "v3", credentials=c),
             build("sheets", "v4", credentials=c).spreadsheets())
 

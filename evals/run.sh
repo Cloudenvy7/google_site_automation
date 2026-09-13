@@ -3,7 +3,8 @@
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PY="${PYTHON:-python3}"
-[ -x "/home/tyler/Projects/Blackfox Studios/.venv/bin/python" ] && PY="/home/tyler/Projects/Blackfox Studios/.venv/bin/python"
+# PYTHON overrides; otherwise whatever python3 is on PATH. No machine-specific
+# venv path -- see scripts/config.py for why those were removed.
 echo "== coverage unit tests =="
 "$PY" "$HERE/test_coverage_unit.py" || exit 1
 echo; echo "== site-build gate (hook) tests =="

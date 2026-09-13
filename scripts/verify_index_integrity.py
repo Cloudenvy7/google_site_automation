@@ -33,8 +33,9 @@ import os
 import json
 import subprocess
 import sys
+import config
 
-VENV = "/home/tyler/Projects/Blackfox Studios/.venv/bin/python"
+VENV = config.python_bin()
 TOL = 0.02   # 2% -- pdftotext is deterministic; docs may vary by trailing bytes
 
 

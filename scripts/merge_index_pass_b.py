@@ -15,9 +15,8 @@ sys.path.insert(0, ".")
 import google.oauth2.service_account as sa
 from googleapiclient.discovery import build
 import run_ledger as RL
+import config
 
-SA = "/home/tyler/Projects/Blackfox Studios/service_account.json"
-HL = "1RZnHy1Lq2rFzkimVZRqhcAvlveTo-H7SL7sosevCqSY"
 COLS = ["file_id", "name", "mime_type", "size", "web_link", "full_path", "depth",
         "kind", "created", "modified", "owner_email", "sharing",
         "sensitivity_tier", "tier_reason", "opened", "not_opened_reason",
@@ -26,7 +25,12 @@ COLS = ["file_id", "name", "mime_type", "size", "web_link", "full_path", "depth"
         "chars_read", "indexed_by", "indexed_at", "review_status"]
 
 
-def main(write=False):
+def main(write=False, catalogue=None):
+    # Resolved here, not at import: the catalogue id is the site being worked
+    # on, and a module-level default is how one client's index gets written
+    # into another client's catalogue.
+    SA = config.service_account_path()
+    HL = config.catalogue_id(catalogue)
     creds = sa.Credentials.from_service_account_file(SA, scopes=[
         "https://www.googleapis.com/auth/spreadsheets"])
     sh = build("sheets", "v4", credentials=creds).spreadsheets()
@@ -120,4 +124,6 @@ def main(write=False):
 
 
 if __name__ == "__main__":
-    sys.exit(main(write="--write" in sys.argv))
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    sys.exit(main(write="--write" in sys.argv,
+                  catalogue=args[0] if args else None))

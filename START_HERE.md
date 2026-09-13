@@ -10,14 +10,22 @@ catalogues are projections.* They are linked below instead.
 
 ---
 
+## First run on this machine?
+
+**[`SETUP.md`](SETUP.md)** — credentials, dependencies, Chrome. Do that first;
+nothing below works without it. `CLAUDE.md` loads automatically in Claude Code
+and carries the rules an agent must not drift from.
+
+---
+
 ## Read in this order
 
 | # | Read | Why |
 |---|---|---|
-| 1 | [`skills/information_systems_architecture/SKILL.md`](skills/information_systems_architecture/SKILL.md) | The procedure. Load this before touching a Site or a client folder. |
+| 1 | [`.claude/skills/information_systems_architecture/SKILL.md`](.claude/skills/information_systems_architecture/SKILL.md) | The procedure. Load this before touching a Site or a client folder. |
 | 2 | [`docs/TEMPLATE_Build_Harness_and_Guardrails_v2_0_instantiate_at_Stage_0.md`](docs/TEMPLATE_Build_Harness_and_Guardrails_v2_0_instantiate_at_Stage_0.md) | Stage 0. Gates 1–6, Guards 1–8, Ledgers 1–5, each with the failure that produced it. |
 | 3 | [`docs/Visual_Second_Brain_Framework_The_Cycle_v0_2.md`](docs/Visual_Second_Brain_Framework_The_Cycle_v0_2.md) | The whole cycle, Stage 0 through Stage 6. |
-| 4 | [`skills/information_systems_architecture/references/FIRST_TRY_CHECKLIST.md`](skills/information_systems_architecture/references/FIRST_TRY_CHECKLIST.md) | Every line cost at least one rebuild. Read before placing a block. |
+| 4 | [`.claude/skills/information_systems_architecture/references/FIRST_TRY_CHECKLIST.md`](.claude/skills/information_systems_architecture/references/FIRST_TRY_CHECKLIST.md) | Every line cost at least one rebuild. Read before placing a block. |
 | 5 | [`DEVLOG.md`](DEVLOG.md) | What was built, what failed, and what each failure produced. |
 
 ## The cycle — document and code, per stage
@@ -33,6 +41,19 @@ catalogues are projections.* They are linked below instead.
 | **5 · RENDER** | `docs/Advisor_OS_Render_Master_Prompt_v1_0.md`<br>`docs/BFS_Block_Catalogue_The_House_Patterns_v1_3.md` | `scripts/extract_site_template.py`, `scripts/catalog_site.py` |
 | **6 · BUILD** | `docs/Google_Sites_Automation_Build_Protocol_v0_4.md` | `scripts/build_from_wireframe.py`, `scripts/wireframe_build.py`,<br>`scripts/build_page.py`, `scripts/sites_automation.py`,<br>`scripts/drive_upload.py`, `scripts/capture_page_images.py` |
 | **audit** | `docs/Advisor_OS_QA_Auditor_Master_Prompt_v1_0.md` | `scripts/run_ledger.py` (`RUN_DEVLOG`) |
+
+Added 2026-09-08, from the Highline StartZone second-site build:
+
+| Script | What it is |
+|---|---|
+| `scripts/site_survey.py` | The sanctioned **read-only** Site probe — account, pages, cells. On the hook's allowlist, which is why it must never gain a mutating call. |
+| `scripts/build_workshops.py` | Sheet-to-Site build: nine Image-and-caption blocks from a Sheet, with reconciliation against the page so a rerun does not duplicate. |
+| `scripts/fetch_flyers.py` | Pulls Drive files through the browser's own session, for folders the service account was never granted. |
+| `scripts/upload_to_drive.py` | Browser upload path. **Recorded as not working** — the chooser arms, Drive never ingests. Kept because the finding is the value. |
+
+Machine setup, not stage-bound: `scripts/config.py` (path and id resolution —
+read its docstring before adding a new credential lookup),
+`scripts/launch_chrome.sh`, `requirements.txt`, `.env.example`.
 
 Reference, not stage-bound:
 `docs/Architecture_Principles_what_makes_a_site_architecture_correct_v1_0.md`,
