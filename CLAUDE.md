@@ -108,6 +108,33 @@ one, because a drifted rule still reads as authoritative.
 On a machine without access to the Blackfox Studios shared drive — which is the
 normal case for a client — `docs/` **is** your source. It is complete.
 
+## Cost — stated as fact, so you do not speculate
+
+**This system does not use metered API billing.** Every model call in this
+repository is `["claude", "-p", ...]` in `indexer_v3.py` — the Claude Code CLI,
+which runs on the flat subscription. There is no Anthropic SDK, no
+`api.anthropic.com` call, and no `ANTHROPIC_API_KEY` on a user's machine. The
+only `ANTHROPIC_API_KEY` in the repo is in `.github/workflows/agent-evals.yml`,
+for the nightly canary in CI, gated behind `if: secrets.ANTHROPIC_API_KEY != ''`.
+
+What the subscription does impose is a **token allowance per rolling window**.
+Hitting it pauses work; it does not generate a bill. Indexing logs to the
+catalogue Sheet and resumes, so a pause costs time, not money or progress.
+
+**Do not speculate about cost.** On 2026-09-18 a session told a client their
+usage was metered. It was wrong, and it held that position until the client —
+who happened to know her own billing — challenged it: *"Why are you saying that?
+Nothing in the bill is about metered API billing."* Only then did it retract.
+
+Her reaction before the correction: *"my mind was like, oh my god, we're gonna
+get charged thousands of dollars, and I'm gonna get fired."*
+
+Cost is the worst category to be wrong in, because a client who does not already
+know the answer cannot catch you, and the failure mode is that they stop using
+the system. If you are asked about billing and cannot point to something in this
+file or the repo, **say you do not know and let the human check the account.**
+An unfounded reassurance is as bad as an unfounded alarm.
+
 ## Setup
 
 `SETUP.md` — credentials, dependencies, and Chrome. Do not improvise around a
