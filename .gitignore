@@ -24,3 +24,8 @@ session_exports/
 *.transcript.md
 *.session.md
 *.ledger.md
+secrets/
+credentials/
+*-service-account*.json
+service_account*.json
+*.key.json

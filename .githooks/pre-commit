@@ -1,14 +1,58 @@
 #!/usr/bin/env bash
-# Runs the deterministic coverage tests when a commit touches the configuration
-# that steers the indexing agent. The playbook's rule: config that steers an
-# agent deserves the regression testing that code gets. Seconds; no model.
+# Two jobs: refuse to commit a credential, and run the evals when the files that
+# steer the indexing agent change.
 #
 # Enable once per clone:   git config core.hooksPath .githooks
 set -u
+
+root="$(git rev-parse --show-toplevel)"
 changed="$(git diff --cached --name-only)"
+[ -z "$changed" ] && exit 0
+
+# ---------------------------------------------------------------------------
+# 1. CREDENTIAL SCAN -- by CONTENT, because filenames cannot be relied on.
+#
+# WHY (2026-09-18): a client session was told to put the downloaded service
+# account key in secrets/ inside the project. Google names that file
+# <project>-<hash>.json. .gitignore listed service_account.json, which does not
+# match it -- so the key would have been committed, and this repository is
+# public. The name the file happens to have is not a security control. What it
+# CONTAINS is.
+#
+# A Google service-account key always carries "private_key" and a PEM header.
+# ---------------------------------------------------------------------------
+bad=""
+while IFS= read -r f; do
+  [ -z "$f" ] || [ ! -f "$f" ] && continue
+  if git show ":$f" 2>/dev/null | head -c 200000 | grep -qE \
+      '"private_key"[[:space:]]*:|-----BEGIN [A-Z ]*PRIVATE KEY-----|"type"[[:space:]]*:[[:space:]]*"service_account"'; then
+    bad="$bad  $f\n"
+  fi
+done <<EOF
+$changed
+EOF
+
+if [ -n "$bad" ]; then
+  echo "pre-commit: REFUSED -- these staged files look like credentials:" >&2
+  printf "$bad" >&2
+  echo "" >&2
+  echo "A service-account key must never be committed. This repository is public." >&2
+  echo "Move it outside the repo and point at it instead:" >&2
+  echo "  mkdir -p ~/.advisor_os && mv <key>.json ~/.advisor_os/service_account.json" >&2
+  echo "  chmod 600 ~/.advisor_os/service_account.json" >&2
+  echo "  export GOOGLE_SERVICE_ACCOUNT_JSON=~/.advisor_os/service_account.json" >&2
+  echo "" >&2
+  echo "If this is a false positive -- a doc quoting a key shape, say -- commit with" >&2
+  echo "--no-verify, and say in the message why it was safe." >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# 2. EVALS -- config that steers an agent deserves the regression testing that
+# code gets. Seconds; no model.
+# ---------------------------------------------------------------------------
 if echo "$changed" | grep -qE '(indexer_v3\.py|coverage\.py|harness\.py|read_drive_file\.py|/evals/|/skills/|CLAUDE\.md|\.claude/hooks/|\.claude/settings\.json)'; then
   echo "pre-commit: agent-steering files changed -> running coverage unit tests"
-  root="$(git rev-parse --show-toplevel)"
   for r in "$root/.agents/evals/run.sh" "$root/evals/run.sh"; do
     if [ -x "$r" ]; then "$r" || { echo "pre-commit: EVALS FAILED -- commit blocked"; exit 1; }; break; fi
   done
