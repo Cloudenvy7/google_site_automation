@@ -70,14 +70,36 @@ Run this **from your own terminal**, inside your desktop session:
 ./scripts/launch_chrome.sh
 ```
 
-> Chrome started from a non-desktop shell — an agent, or ssh — cannot reach the
-> system keyring. It then presents as signed out even though the profile holds a
-> valid session, and the failure looks like expired credentials. If
-> `DBUS_SESSION_BUS_ADDRESS` is unset, you are in that situation. The launcher
-> warns you.
+> Chrome started from a shell with no desktop session — an agent, or ssh —
+> cannot reach the system keyring. It then presents as signed out even though the
+> profile holds a valid session, and the failure looks like expired credentials.
+> On Linux, an unset `DBUS_SESSION_BUS_ADDRESS` means you are in that situation
+> and the launcher warns you. On macOS the Keychain is reached normally from
+> Terminal, so no warning is printed.
 
 It opens a window on a profile separate from your everyday Chrome. Sign in to the
 Google account that can edit the Site; it persists after that.
+
+**On macOS**, Chrome is an `.app` bundle and is not on `PATH`. The launcher looks
+in `/Applications` and `~/Applications`; if yours is elsewhere:
+
+```bash
+export CHROME="/path/to/Google Chrome"
+```
+
+**Quit Chrome fully (⌘Q) before running this.** A Chrome already running ignores
+the debugging flag, and the new invocation just opens a window in the existing
+process — so the port never appears and nothing explains why.
+
+Verify which account you actually got before building anything:
+
+```bash
+python scripts/site_survey.py <site_id> <u_index>
+```
+
+`<u_index>` is the `/u/N/` in the editor URL. Getting it wrong points the build at
+a different signed-in account, which is a failure you want to discover here and
+not three blocks into a page.
 
 ## 5. The catalogue
 
