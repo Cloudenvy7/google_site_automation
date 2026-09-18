@@ -202,7 +202,7 @@ def read_rows(sh, sid):
 def sibling_check(dr, meta, drive_id, n_files):
     """Refuse a root that is probably a leaf of the real project folder.
 
-    v2 was handed the id of "Hopelink Project Site Folder" and crawled it as the
+    v2 was handed the id of "the first client's project folder" and crawled it as the
     project root. That folder is a SIBLING of the folders holding the material;
     listing it returns 2 files out of 61. The crawl succeeded, reported no error,
     and would have produced a 2-row index that looked finished.

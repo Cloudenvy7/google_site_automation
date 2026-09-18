@@ -16,7 +16,7 @@ WHAT IT ENFORCES, and the failure behind each:
                   by which content that is not a cell reaches a page.
   RATIFIED FIRST. The door opens only on a fresh preflight stamp (harness.py
                   preflight) that says RATIFIED. Failure: build proposed twice
-                  before the HopeLink ISA existed.
+                  before the first client ISA existed.
   NO BLIND DELETE. clear_page outside the door is refused. Failure: 2026-08-31,
                   clear_page ran on the wrong page and destroyed a finished Home.
   PUBLISH ASKS.   Publishing is outward-facing; the human confirms.

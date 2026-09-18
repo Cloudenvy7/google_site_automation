@@ -42,7 +42,7 @@ and carries the rules an agent must not drift from.
 | **6 · BUILD** | `docs/Google_Sites_Automation_Build_Protocol_v0_4.md` | `scripts/build_from_wireframe.py`, `scripts/wireframe_build.py`,<br>`scripts/build_page.py`, `scripts/sites_automation.py`,<br>`scripts/drive_upload.py`, `scripts/capture_page_images.py` |
 | **audit** | `docs/Advisor_OS_QA_Auditor_Master_Prompt_v1_0.md` | `scripts/run_ledger.py` (`RUN_DEVLOG`) |
 
-Added 2026-09-08, from the Highline StartZone second-site build:
+Added 2026-09-08, from the partner site second-site build:
 
 | Script | What it is |
 |---|---|
@@ -83,7 +83,7 @@ Bash call regardless of what code the agent wrote.** Stdlib only, offline, fast.
 | Rule | What happens | The failure behind it |
 |---|---|---|
 | **Use the door** | Any executing command that reaches the Sites editor is refused unless it goes through the door — `build_from_wireframe.py` / `run_wireframe.py` — the path that enforces the Landing Rule and asserts the page id. Inline writes, in any syntax, are refused. | Content typed from a script is content that is not a cell. |
-| **Ratified first** | The door opens only on a fresh (< 12h) `preflight` stamp that says `RATIFIED`, for that site. | Build proposed twice before the HopeLink ISA existed. |
+| **Ratified first** | The door opens only on a fresh (< 12h) `preflight` stamp that says `RATIFIED`, for that site. | Build proposed twice before the first client ISA existed. |
 | **No blind delete** | `clear_page` outside the door is refused, even under a waiver. | 2026-08-31: a page click silently missed and `clear_page` destroyed a finished Home. |
 | **Publish asks** | Publishing prompts the human. | Outward-facing. |
 | **Waivers are human acts** | `~/.advisor_os/waivers/<name>.json` with `waived_by`, `site_id`, `expires`, `reason` permits builds on that one named site. | Scratch testing needs a door too — one a human opened. |
@@ -143,12 +143,12 @@ these.
 |---|---|
 | Drive folder (canonical docs) | `1ZLG4E66kgHewdmRBXh2T1dqsF5D7r9wn` — "Google Sites Automation", Blackfox Studios shared drive |
 | Catalogue template (Sheet) | `14lvGzhN1I6urSavZ7yCBLgcqbptz57C2dh3IkGn60H4` |
-| JBL — Visual Knowledge Catalog | `1RDCybCvyL6Bra2At7VKFoDEnOWfodmiQQukZKv_vzJw` — 8 pages, 100 blocks, the extracted vocabulary |
+| the reference site — Visual Knowledge Catalog | `<reference-site-catalogue-id>` — 8 pages, 100 blocks, the extracted vocabulary |
 | Visual Second Brain Substrate | `1pq0KZeLXC_sdY3qrdQkIVctlEwhUNDalTLX3SwvNx5U` — **not mirrored: holds real people and organisations** |
-| HopeLink ISA (worked instance) | `1MpXVxdm3nY0m_mH6P8a4091WhkJuSghUtxxxJEoK0M0` — in `Hopelink Project Site Folder` |
-| HopeLink Visual Knowledge Catalog | `1RZnHy1Lq2rFzkimVZRqhcAvlveTo-H7SL7sosevCqSY` — same folder |
+| the first client ISA (worked instance) | `<first-client-isa-id>` — in `the first client's project folder` |
+| the first client Visual Knowledge Catalog | `<first-client-catalogue-id>` — same folder |
 
-Read the HopeLink ISA **to see what a filled-in ISA looks like, never to copy
+Read the first client ISA **to see what a filled-in ISA looks like, never to copy
 from.** Reusing another site's pages, reader model or goals is the drift the
 template exists to prevent.
 
@@ -157,8 +157,8 @@ template exists to prevent.
 | Site | ID | State |
 |---|---|---|
 | SBDC Advisor Workshops | `1e7y_nvGjz6sMHxDZPbbfb2wMP9yG_mn9` | published — `sites.google.com/blackfoxstudios.org/sbdc-advisor-workshops/workshops?authuser=1` |
-| HopeLink Ride Ready (scratch) | `16rOjT22qmA8BhZSpcLVSH4XSnNTXPd5W` | draft only, Home is a placement test harness |
-| BFS X JBL (read for vocabulary, not built by this) | `1QFaboCAS4UaUVer6LigMDpcHrrvwADSW` | published |
+| the first client site (scratch) | `<first-client-site-id>` | draft only, Home is a placement test harness |
+| the reference site (read for vocabulary, not built by this) | `<reference-site-id>` | published |
 
 ## On the mirror
 

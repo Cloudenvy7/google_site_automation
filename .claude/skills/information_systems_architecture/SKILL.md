@@ -5,13 +5,13 @@ description: Write the Information Systems Architecture for a client site before
 
 # Information Systems Architecture — the first-try procedure
 
-This skill exists because the HopeLink Ride Ready build took many passes to reach
+This skill exists because the first client site build took many passes to reach
 a correct page. Almost none of that cost was technical. It was structural: the
 architecture was written late, the roster was never gathered into a tab, presets
 were assumed rather than measured, and a destructive step ran without checking
 its target. Every one of those is preventable by order of operations.
 
-**Nothing in this skill is HopeLink-specific.** HopeLink is the instance that
+**Nothing in this skill is the first client-specific.** the first client is the instance that
 produced the lessons; `references/ARCHITECTURE_PRINCIPLES.md` records them as
 principles, with the failure attached so a later session can evaluate them rather
 than obey blindly.
@@ -99,8 +99,8 @@ the canary (a synthetic fact at 93% of a long file must reach the row, and a
 deliberately partial read must be refused). If you change `AGENT_PROMPT`, run
 the canary before you trust the change.
 
-**A worked instance to compare against, never to copy from:** the HopeLink Ride
-Ready ISA (`1MpXVxdm3nY0m_mH6P8a4091WhkJuSghUtxxxJEoK0M0`). Read it to see what a
+**A worked instance to compare against, never to copy from:** the first client Ride
+Ready ISA (`<first-client-isa-id>`). Read it to see what a
 filled-in ISA looks like, including its revision log. Do not lift its pages, its
 reader model, or its goals — those are that site's, and reusing them is the drift
 this skill exists to prevent.
@@ -123,7 +123,7 @@ You cannot write the architecture until you can answer:
 
 - **Who reads this, and how many of them are there?**
 - **What changes about them?** Turnover, rotation, onboarding — this is usually
-  the real design constraint. HopeLink's site existed *because the people did not
+  the real design constraint. the first client's site existed *because the people did not
   persist*.
 - **What questions do they arrive with?** List them, then **order them by how
   often each is asked** — not by how important the content is.

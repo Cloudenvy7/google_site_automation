@@ -7,7 +7,7 @@ Two views are required and neither is sufficient alone:
 
 The editor lazy-renders images and paints an ar-gradient placeholder into the
 cell until it scrolls into view, so reading content_image_url from the editor
-reports real images as empty. That mistake was made and caught on JBL/Home.
+reports real images as empty. That mistake was made and caught on the reference site/Home.
 """
 
 import json

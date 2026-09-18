@@ -138,12 +138,12 @@ These are measured, not assumed. The full list is in `FIRST_TRY_CHECKLIST.md`.
 1. **The paragraph build path is broken.** Layout blocks fill correctly; a plain
    `Text box` insert reports `ONLY_0_EMPTY_FOR_1_TEXTS`. Layouts work,
    paragraphs do not — and `paragraph` is the most common block type.
-2. **GATE 6 refuses on HopeLink** — 53 P1/P2 files are read but `extracted_to`
+2. **GATE 6 refuses on the first client** — 53 P1/P2 files are read but `extracted_to`
    is empty. Content indexed, not landed in tabs. This is the Landing Rule
    working, not a bug.
 3. **`drive_indexer.py` still implements the v1.0 metadata-only contract.** The
    spec is v2.0. `indexer_v3.py` is the v2.0-shaped path.
-4. **The template itself is not derived.** One site (BFS X JBL) is decomposed
+4. **The template itself is not derived.** One site (the reference site) is decomposed
    into 8 pages and 100 blocks. "Template" means what is constant *across*
    sites, and that needs a second site run through the extractor and diffed.
 

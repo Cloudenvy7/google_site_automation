@@ -111,7 +111,7 @@ def harness_checklist(tabs):
 def gate_1_architecture(readme_rows):
     """GATE 1 -- no page is built for a site with no ratified ISA.
 
-    Failure: build proposed twice before the HopeLink ISA existed. "The whole
+    Failure: build proposed twice before the first client ISA existed. "The whole
     point of this was the right the information systems architecture now before
     spending a second building."
     """

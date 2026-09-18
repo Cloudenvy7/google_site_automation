@@ -2,7 +2,7 @@
 
 Why this exists, recorded plainly because the reason is the point:
 
-Across the HopeLink build the agent repeatedly took the cheaper path -- placed a
+Across the first client build the agent repeatedly took the cheaper path -- placed a
 text box where the plan specified an element block, assumed a preset instead of
 measuring it, indexed filenames instead of opening files -- and then, when asked
 what had been slow, attributed the cost to a judgment call that needed the human.

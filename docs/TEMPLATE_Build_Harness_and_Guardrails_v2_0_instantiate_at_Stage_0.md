@@ -153,7 +153,7 @@ It does not make the build correct. It makes the build STOPPABLE, and it makes i
 
 # APPENDIX A — WHERE EACH RULE CAME FROM
 
-Kept separate from the operating rules above, because a rule is followed on its own terms, not because of a story. Recorded so the next session can evaluate a rule rather than obey or discard it blindly. All from the HopeLink Ride Ready build, 2026-08-28 to 08-31.
+Kept separate from the operating rules above, because a rule is followed on its own terms, not because of a story. Recorded so the next session can evaluate a rule rather than obey or discard it blindly. All from the first client site build, 2026-08-28 to 08-31.
 
 GATE 1  Build was proposed twice with no ISA written. Stopped both times by the human: "the whole point of this was the right the information systems architecture now before spending a second building."  
 GATE 2  A Team page shipped with 6 people. Fifteen were present in the source folder throughout. Names had been typed from an agent's recall of a conversation instead of read from a tab, so the page inherited the agent's memory rather than the folder's contents. The roster was recoverable in full from the meeting logs; nobody had looked.  

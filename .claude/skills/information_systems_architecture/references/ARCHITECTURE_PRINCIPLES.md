@@ -4,7 +4,7 @@ Each principle carries the failure that produced it. A rule without its
 reasoning is cargo — the next session cannot evaluate it and will either discard
 it or obey it blindly.
 
-Derived from the HopeLink Ride Ready build (2026-08-28 to 09-01). The principles
+Derived from the first client site build (2026-08-28 to 09-01). The principles
 are general; the evidence is specific.
 
 ---
@@ -16,7 +16,7 @@ come to find out, not a filing scheme and not the folder tree.
 
 **Order pages by frequency of the question, not importance of the content.**
 An architecture ordered by importance optimises for the rare visit and taxes the
-common one. HopeLink's most important page sits third because it is read once,
+common one. the first client's most important page sits third because it is read once,
 while the briefs are read weekly.
 
 **Separate by AUDIENCE before separating by TIME.**
@@ -42,7 +42,7 @@ reading level, under five minutes, ending with a map of every other page.
 ## On what to leave out
 
 **Exclusions are recorded, and the significant ones are visible on the site.**
-An absence should read as a decision, not a gap. HopeLink excludes raw
+An absence should read as a decision, not a gap. the first client excludes raw
 transcripts because verbatim speech is where criticism of people lives, and the
 briefs stay candid only while the room stays candid — so Home says so.
 

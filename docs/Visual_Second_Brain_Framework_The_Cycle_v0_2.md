@@ -25,7 +25,7 @@ Purpose: catalogue what is in the cabinet. Metadata only; nothing is opened, mov
 Input: a Drive folder id.  
 Output: DRIVE\_INVENTORY, one row per file and folder, with a sensitivity tier.  
 Governed by: Indexer Spec.  
-Status: RUN ONCE (HopeLink, 85 rows) — spec and reusable script NOT YET WRITTEN.  
+Status: RUN ONCE (the first client, 85 rows) — spec and reusable script NOT YET WRITTEN.  
 **STAGE 2 — CHARTER**  
 Purpose: establish why the site exists and what belongs on it, in the client's words.  
 Input: five questions, then a second grounded round after reading the inventory.  
@@ -157,11 +157,11 @@ Implemented by: .agents/scripts/harness.py
 Register: Build Harness — STAGE 0 template, governs all stages — v2.0 — WRITTEN, SHIPS IN THE CATALOGUE TEMPLATE
 
 ADDED 2026-09-01 — THE TEMPLATE SET IS COMPLETE, AND IT IS NOW A SKILL  
-An audit of every framework document for site-specific content found the Site Architect, Render and QA Auditor prompts, the Block Catalogue, the Build Protocol and the Catalogue Template all clean. Two mentions of HopeLink remain, in this document and the Indexer Spec, and both are provenance — 'written from a run that actually happened' — which is worth keeping, because it marks those specs as evidence-based rather than designed.  
-The real gap was that an ISA existed only as a HopeLink instance. There was no template. Three documents now close it:  
+An audit of every framework document for site-specific content found the Site Architect, Render and QA Auditor prompts, the Block Catalogue, the Build Protocol and the Catalogue Template all clean. Two mentions of the first client remain, in this document and the Indexer Spec, and both are provenance — 'written from a run that actually happened' — which is worth keeping, because it marks those specs as evidence-based rather than designed.  
+The real gap was that an ISA existed only as a the first client instance. There was no template. Three documents now close it:  
 TEMPLATE \- Information Systems Architecture v1.0 — https://docs.google.com/document/d/15DWHdjKTuGoz\_Sr-E19HPm8xAts\_\_T3gWuXWPKcR-qw/edit  
 Architecture Principles — https://docs.google.com/document/d/1QDeygsn1NslxVlH6OXWC9JnkvPH-EEymAmwxFoIf4Sk/edit  
 First-Try Checklist — https://docs.google.com/document/d/1ADmv0f8IJJxzFDDd\_5LbiayCc-T7P9JvUgc3Xbgu1uI/edit  
-The HopeLink ISA is retained as a WORKED INSTANCE — read to see what a filled ISA looks like, never to copy pages, reader model or goals from. Reusing another site's architecture is the drift the template exists to prevent.  
+The first client ISA is retained as a WORKED INSTANCE — read to see what a filled ISA looks like, never to copy pages, reader model or goals from. Reusing another site's architecture is the drift the template exists to prevent.  
 All of it is packaged as the Claude Code skill 'information\_systems\_architecture', which loads the reading order, the stage order and the gates automatically when a site build opens. The skill carries each principle with the failure attached, so a later session can evaluate a rule rather than obey or discard it blindly.  
 Register: Information Systems Architecture — stage 0 template \+ skill — v1.0 — WRITTEN  

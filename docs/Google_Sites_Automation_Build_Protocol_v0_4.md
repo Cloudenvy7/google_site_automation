@@ -57,7 +57,7 @@ Sites inserts a new layout relative to the **current selection**, not at the end
 
 ## **6\. Use the Sheets API, not the browser**
 
-service\_account.json → antigravity-agent@antigravity-2026.iam.gserviceaccount.com writes to Sheets in a Shared Drive. Service accounts have zero personal Drive quota, so spreadsheets.create in My Drive fails as storageQuotaExceeded; inside a Shared Drive it works. Ten rows in one batchUpdate call, versus roughly eight seconds per cell through browser automation with retries. Browser automation is for Sites only.
+service\_account.json → <your-service-account>@<project>.iam.gserviceaccount.com writes to Sheets in a Shared Drive. Service accounts have zero personal Drive quota, so spreadsheets.create in My Drive fails as storageQuotaExceeded; inside a Shared Drive it works. Ten rows in one batchUpdate call, versus roughly eight seconds per cell through browser automation with retries. Browser automation is for Sites only.
 
 ## **7\. The build sequence**
 

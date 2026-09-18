@@ -125,7 +125,7 @@ def test_readonly_allowlist_is_narrow():
     """site_survey.py is allowlisted so Stage 1 diagnosis is possible. The
     allowlist must not become a way to smuggle a write past the gate."""
     with tempfile.TemporaryDirectory() as h:
-        rc, _, _ = run("cd scripts && python3 site_survey.py 1zt9YV_klKRhTodzdPaQLIIbAFJK2Yg9h 1", h)
+        rc, _, _ = run("cd scripts && python3 site_survey.py <partner-site-id> 1", h)
         check("site_survey.py -> allow", rc == 0)
         rc, _, _ = run("python3 site_survey.py SITE && python3 -c \"import sites_automation as S; S.type_chars(ws,'x')\"", h)
         check("allowlisted name + a write in the same command -> block", rc == 2)

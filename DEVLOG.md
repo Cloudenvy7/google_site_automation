@@ -9,6 +9,19 @@ history. This file is the Sites-track extract. **A correction made in one must
 be made in the other** — two copies of a log drift, and a drifted log is worse
 than no log because it still reads as authoritative.
 
+> **ANONYMISED 2026-09-18, and said here rather than done quietly.**
+> This repository is public and is sent to prospective clients. Client and
+> partner names have been replaced throughout with role labels — *the first
+> client*, *the reference site*, *the partner site* — and their Drive, Sheet and
+> Site ids with placeholders. A client reading this should not be learning
+> another named client's project history, including its failed builds. That is
+> not ours to publish, whatever its accuracy.
+>
+> **Nothing about the engineering was removed.** Every rule still carries the
+> failure that produced it, which is the part worth reading; it simply no longer
+> says whose failure it was. The names remain in the private `advisor-os` copy,
+> which stays canonical.
+
 ________________
 
 ## 2026-09-13 (later) — Auditing what a session claimed, and the Drive upload that was never broken the way we said
@@ -141,7 +154,7 @@ reported success. Rerun: 9 skipped, 0 duplicated, all 9 ids captured.
    the code was written. *Maker is never checker* — portability stays a claim.
 3. The flyer ids are captured but **not yet written** to the Workshops sheet's
    `Flyer Embed URL` column.
-4. The Highline waiver expires **2026-09-30**.
+4. The partner org waiver expires **2026-09-30**.
 
 *Mirrored into `advisor-os/07_Changelog/DEVLOG.md`, which stays canonical.*
 
@@ -167,7 +180,7 @@ machine-specific assumption was still load-bearing and invisible.
 
 ### 1. Four scripts existed only on this laptop
 
-The 2026-09-08 Highline StartZone build — `site_survey.py`,
+The 2026-09-08 the partner site build — `site_survey.py`,
 `build_workshops.py`, `fetch_flyers.py`, `upload_to_drive.py`, 991 lines —
 was committed to a Claude worktree branch and never pushed anywhere. Five days.
 That branch is disposable by design; a cleanup would have taken the second-site
@@ -206,7 +219,7 @@ Four were env-overridable. **Two were not** — `drive_indexer.py` and
 `merge_index_pass_b.py` had no override at all, so on a clone there was no way
 to run them without editing source.
 
-Worse: `merge_index_pass_b.py` hard-coded **HopeLink's catalogue id** and wrote
+Worse: `merge_index_pass_b.py` hard-coded **the first client's catalogue id** and wrote
 to it. On a client's machine that is not a crash. It is a successful write into
 the wrong client's spreadsheet.
 
@@ -287,7 +300,7 @@ this runs regardless.
 | Rule | Failure it answers |
 |---|---|
 | **Use the door.** An executing command that reaches the Sites editor is refused unless it goes through `build_from_wireframe.py` / `run_wireframe.py` — the path that enforces the Landing Rule (GATE 2) and asserts the page id (GUARD 1). | 2026-09-07: placement-test blocks typed by hand from an inline script. Harmless that day; the exact path by which content that is not a cell reaches a page. |
-| **Ratified first.** The door opens only on a fresh (< 12 h) stamp from `harness.py preflight <catalogue> <site>` that says `RATIFIED`, for that site. | Build proposed twice before the HopeLink ISA existed. |
+| **Ratified first.** The door opens only on a fresh (< 12 h) stamp from `harness.py preflight <catalogue> <site>` that says `RATIFIED`, for that site. | Build proposed twice before the first client ISA existed. |
 | **No blind delete.** `clear_page` outside the door is refused, even under a waiver. | 2026-08-31: a page click silently missed; `clear_page` destroyed a finished Home. |
 | **Publish asks.** `permissionDecision: ask`. | Outward-facing. |
 | **Waivers are human acts.** `~/.advisor_os/waivers/*.json` with `waived_by`, `site_id`, `expires`, `reason`; one named site; every use logged. | Scratch testing needs a door too — one a human opened. |
@@ -300,7 +313,7 @@ agent's file tools — the playbook's cheapest control.
 be the thing that decides ratification. So `harness.py preflight` reads the
 catalogue once, applies STAGE 0 / `00_HARNESS` / GATE 1 / GATE 5, and leaves a
 stamp; the hook answers one question — fresh, this site, RATIFIED? — and
-refuses anything else. Run for real against the HopeLink catalogue: **REFUSED,
+refuses anything else. Run for real against the first client catalogue: **REFUSED,
 truthfully** — no `00_HARNESS` tab (built before the harness existed), ISA
 `DRAFT`, and no `ratified_by` on CHARTER, MANIFEST or PAGE_PLAN. Its first run
 reported GATE 5 as *"could not evaluate"* because `gate_5_ratified` reads dict
@@ -357,13 +370,13 @@ the ledger, not the exit code.
 ### Not done, deliberately
 
 **No waiver was written.** The two scratch sites used for placement tests
-(SBDC `test` page, HopeLink scratch) will now be refused until a human places a
+(SBDC `test` page, the first client scratch) will now be refused until a human places a
 waiver naming them. `waived_by` is a person; writing one on Andrew's behalf
 would be the agent granting itself the thing the file exists to withhold.
 
 ### Open
 
-- HopeLink's catalogue has no `00_HARNESS` tab and will keep refusing preflight
+- the first client's catalogue has no `00_HARNESS` tab and will keep refusing preflight
   until it is retrofitted — raised 2026-09-01, still Andrew's call.
 - No `SessionStart` hook; `CLAUDE.md` carries the standing instruction.
 - Plugin conversion of the repo — later, per Andrew.
@@ -599,7 +612,7 @@ routed Sites work to browser automation. This session proved that path.
   It presents as a logout when you are not logged out.
 - **`blackfoxstudios.org` is multi-login index `/u/1`**; `/u/0` is the gmail
   account. The two artifacts from prior sessions were owned by
-  `andrewpowerswa@gmail.com`, to which `andrew@blackfoxstudios.org` had no
+  `a personal gmail account`, to which `andrew@blackfoxstudios.org` had no
   access — a permissions fact, not a preference.
 - **Uploads go through the native OS file chooser**, which no DOM scripting can
   reach. `Page.setInterceptFileChooserDialog` converts it into an event carrying
@@ -656,7 +669,7 @@ chronologically and read back to their row without opening anything.
    verified its *position*.
 2. **"Same size" was not achieved.** One layout, but the image slot sizes to each
    picture's aspect ratio. Uniform format, not uniform size. **Still open.**
-3. **A published page arguing with itself** — the Highline caption read "Jan 4,
+3. **A published page arguing with itself** — the partner org caption read "Jan 4,
    2026" while the flyer in the same block read "Wednesday January 28th."
 
 **The Jan 4 → Jan 28 discrepancy is Andrew's to rule on and was not changed.**
@@ -673,9 +686,9 @@ workshop and is actually a June 14 "AI Tools for Small Business" thank-you post.
 
 ---
 
-### 3. Reading the existing design language — BFS X JBL
+### 3. Reading the existing design language — the reference site
 
-Andrew: *"review the jbl.blackfoxstudios.org site ... this is about cataloging
+Andrew: *"review the <reference-site>.example.org site ... this is about cataloging
 the site as a template to repeat."*
 
 **Published HTML cannot yield the block vocabulary.** Sites compiles every block
@@ -683,7 +696,7 @@ to generic divs; a `layout: Image and caption` preset and a hand-placed image
 beside a text box are indistinguishable in the output. The editor is where the
 vocabulary lives — `aria-labels` and grid geometry. Two views are required and
 neither is sufficient alone: **editor for block type and arrangement, published
-page for image URLs.** Claude initially reported five JBL image cells as empty;
+page for image URLs.** Claude initially reported five the reference site image cells as empty;
 they were real 1280px images, and the editor lazy-renders `ar-gradient(...)`
 placeholders until a cell scrolls into view. That correction is in
 `catalog_site.py` as a stated rule, because an agent trusting the editor alone
@@ -722,7 +735,7 @@ method for this to start — we only want to use embeds on the next iteration th
 iteration we want the blocks and placement — we want to avoid the Appscript build
 until we have the block builds of sites first."* Logged as PROP-010. Claude
 stated the cost at the time: of nine in-scope types, one was proven and seven
-were untested. Claude also flagged the tension — every JBL page carries 1–2
+were untested. Claude also flagged the tension — every the reference site page carries 1–2
 iframes, so a template derived from Andrew's own sites and excluding embeds
 cannot reproduce his own pages; the resolution proposed was to record embed types
 as *deferred* rather than absent.
@@ -731,14 +744,14 @@ as *deferred* rather than absent.
 
 ### 4. Andrew's correction: one catalogue per site
 
-Claude had written JBL's 8 pages and 100 blocks into the practice-wide Visual
+Claude had written the reference site's 8 pages and 100 blocks into the practice-wide Visual
 Second Brain substrate. Andrew, 2026-08-29:
 
 > *"the visual second brain would have a link to the sheet but wouldn't try to
 > hold all the information of the sheet on its own."*
 
 Corrected: each site gets its own **Visual Knowledge Catalog** workbook; the
-substrate holds a pointer (`RES-VKC-JBL`, `RES-VKC-HOPELINK` in `06_RESOURCES`),
+substrate holds a pointer (`RES-VKC-the reference site`, `RES-VKC-FIRST-CLIENT` in `06_RESOURCES`),
 not the contents. `P_SITE_PAGES` returned 13 → 4 rows, `P_SITE_CONTENT_BLOCKS`
 113 → 4.
 
@@ -757,10 +770,10 @@ it was misdiagnosed once before as `storageQuotaExceeded`.
 
 ---
 
-### 5. HopeLink Ride Ready — the full cycle, and four failed page builds
+### 5. the first client site — the full cycle, and four failed page builds
 
 Andrew asked for one complete turn of the cycle on a real client folder, mirroring
-JBL: *"i want it to mirror the JBL website so that we are making it as much alike
+the reference site: *"i want it to mirror the reference site website so that we are making it as much alike
 as possible."*
 
 The page build failed four times, and the sequence is the most instructive part
@@ -778,7 +791,7 @@ Two more measured corrections at the same time: layout cells fill **column-major
 (entire left column, then entire right), not row-major; and typing at 40–50 ms per
 character transposes silently — `PAARGRAPH`, `One call ro one click`. **0.11 s/char
 is clean.** A two-column layout owns **six** cells (media + heading + body per
-column), which is why JBL's "three blocks" were always one.
+column), which is why the reference site's "three blocks" were always one.
 
 Claude reported per-block success on three scrambled pages before stopping. The
 recorded diagnosis: *"my verification confirms a cell received the text — it never
@@ -820,8 +833,8 @@ the same failure, caught.
 
 ### 7. The roster failure — and the Landing Rule
 
-Andrew: *"Why is the full hopelink team not being displayed?!? Didn't you have
-more people associated with hopelink?"*
+Andrew: *"Why is the full the first client team not being displayed?!? Didn't you have
+more people associated with the first client?"*
 
 The Team page had 6 people. There were 15. Claude had marked the roster
 `NOT ESTABLISHED` in the catalogue and **built around its own flag** — the names
@@ -876,7 +889,7 @@ exception type, because refusal is a valid deliverable.
 
 Two honest results from testing it, both left as they are: the blank template
 refuses Stage 0 (correct — it has no `site_name`, no `drive_folder_id`, no ISA),
-and **HopeLink refuses differently** because it has no `00_HARNESS` tab at all,
+and **the first client refuses differently** because it has no `00_HARNESS` tab at all,
 having been built before the harness existed. Claude left it refusing rather than
 backfilling, since retrofitting would make it look like Stage 0 had been done.
 
@@ -897,7 +910,7 @@ reframed the whole session, and Claude's earlier account was wrong:
 > it done fast."*
 
 **The defect was one sentence in Indexer Spec v1.0: *"metadata only; nothing is
-opened."*** The HopeLink index was 85 rows of filenames, `site_candidate` 0/85,
+opened."*** The first client index was 85 rows of filenames, `site_candidate` 0/85,
 with no column holding what any file said. The Charter, Manifest, Page Plan and
 both built pages all rested on a guess about the folder's contents.
 
@@ -916,7 +929,7 @@ coverage is short, because writing 54 of 59 rows and reporting success is the
 failure the pass exists to end.
 
 **What the old index could not have known**, all found by opening files:
-- **Camy Naasz is HCD Director at Anthro-Tech, not Hopelink**, and her surname was
+- **Camy Naasz is HCD Director at Anthro-Tech, not the first client**, and her surname was
   in a brief that had never been opened. Two of the four waivers Claude had put in
   front of Andrew were requests to ratify its own failure to read — precisely the
   pattern Andrew had named: a flag recorded honestly, then used to justify not
@@ -948,8 +961,8 @@ row** — maker is never checker. Recorded in `RUN_DEVLOG`, including that the s
 shared-scratch-path bug was committed inside the tool built to catch it.
 
 **A root-folder error found only by independent re-crawl** (2026-09-01): Pass A
-had recorded the root as "Hopelink Project Site Folder", which is a **sibling** of
-"HopeLink - Dev Team Meetings", not the project root. Listing it returns **2 files,
+had recorded the root as "the first client's project folder", which is a **sibling** of
+"the first client - Dev Team Meetings", not the project root. Listing it returns **2 files,
 not 59**. A second latent trap alongside it: shared-drive listings need
 `corpora='drive'` and `driveId`, and without them a crawl quietly under-returns.
 The 59 came out right by luck — the original crawler walked the correct tree and
@@ -972,7 +985,7 @@ is never reported as a measurement (Rule 7).
 
 Andrew, 2026-09-01, and this changes the system design rather than one script:
 
-> *"we aren't just doing this for Hopelink and we need the ai system and or skill
+> *"we aren't just doing this for the first client and we need the ai system and or skill
 > that we are developing to run with all the guardrails and harnesses in place so
 > that it can run on her system which is claude pro $20 account and still do the
 > indexing while using Sonnet 5 and run on a long history of files and folders in
@@ -1005,7 +1018,7 @@ over the command to fix it.
 
 ### 11. The skill — `information_systems_architecture`
 
-Andrew asked for the HopeLink-specific work to be generalised: *"create a new
+Andrew asked for the first client-specific work to be generalised: *"create a new
 file basically called the information systems architecture skills folder ... so
 that we can utilize what we've already done in a template version ... in a way
 that's going to clearly do it on the first try rather than you know how many
@@ -1026,11 +1039,11 @@ times it took."*
 6 BUILD     make the Site match the sheet; every run logged
 ```
 
-The HopeLink ISA is registered as **a worked instance to compare against, never
+The first client ISA is registered as **a worked instance to compare against, never
 to copy from** — reusing another site's pages, reader model or goals is the exact
 drift the template prevents.
 
-**HopeLink references were deliberately left in `SKILL.md` and
+**the first client references were deliberately left in `SKILL.md` and
 `ARCHITECTURE_PRINCIPLES.md`** and removed from the other two. Each principle
 names the failure that produced it, per non-negotiable 8: a rule without its why
 is cargo, and the next session will either discard it or obey it blindly.
@@ -1132,15 +1145,15 @@ this commit — it existed only as untracked files in a worktree.
    independent read-back of every cell, not by the builder's own status string.
 
 10. **The Cycle v0.2 carries one stale status line.** It still reads *"Status:
-   RUN ONCE (HopeLink, 85 rows) — spec and reusable script NOT YET WRITTEN"* for
+   RUN ONCE (the first client, 85 rows) — spec and reusable script NOT YET WRITTEN"* for
    Stage 1. Both exist: Indexer Spec v2.0 and `indexer_v3.py`. Flagged to Andrew
    on 2026-09-01 and again 2026-09-07; **he has not ruled, so it is left as
    written.** Correcting a doc in his Drive is his call, and per "never
    overwrite" the fix is an appended correction, not an edit to the line.
-2. **GATE 6 still refuses on HopeLink** — 53 P1/P2 files are read but their
+2. **GATE 6 still refuses on the first client** — 53 P1/P2 files are read but their
    `extracted_to` is empty. Content indexed, not landed in tabs. The Charter and
    Page Plan cannot be trusted until it is. This is the Landing Rule working.
-3. **HopeLink's Charter, Manifest and Page Plan were built on the old
+3. **the first client's Charter, Manifest and Page Plan were built on the old
    filename-only index** and have not been rewritten against the real one.
    `isa_status` is DRAFT; ratification is Andrew's.
 4. **`drive_indexer.py` still implements the v1.0 metadata-only contract.** The
@@ -1151,7 +1164,7 @@ this commit — it existed only as untracked files in a worktree.
    the Jan 4 / Jan 28 contradiction is live on the published page.
 6. **The `scope: per-project | practice-wide` field** proposed after the substrate
    mix-up is not built.
-7. **The template itself is still not derived.** JBL is decomposed; "template"
+7. **The template itself is still not derived.** the reference site is decomposed; "template"
    means what is constant *across* sites, and that needs a second site (BFS X CG
    or BFS X RCRC) run through the extractor and diffed.
 8. **`Tacoma Commuter.mp4`** is unindexed pending a transcription step.
@@ -1165,8 +1178,8 @@ this commit — it existed only as untracked files in a worktree.
 ### Privacy flags
 
 - **`Automated System for Claude Briefs`** (Google Doc, 286,213 chars) sits at the
-  root of the HopeLink folder and is **predominantly SBDC content filed in a
-  HopeLink folder** — SBDC 61 mentions, King County 82, Hopelink 32. It is a
+  root of the first client folder and is **predominantly SBDC content filed in a
+  the first client folder** — SBDC 61 mentions, King County 82, the first client 32. It is a
   pasted transcript of Claude Code sessions where the brief system was built,
   using real advisory work as test data: **session notes naming two real SBDC
   clients, a King County solicitation with bid positioning, and a narrative
@@ -1180,7 +1193,7 @@ this commit — it existed only as untracked files in a worktree.
   rewrite: **under the filename-only index it was a row that read like project
   documentation, and any Charter written from that index had no way to know it
   carried another client's session notes.**
-- **Every HopeLink brief carries a "Confidential, Internal Distribution Only"
+- **Every the first client brief carries a "Confidential, Internal Distribution Only"
   footer.** Relevant to anything published.
 - Because of the first item, **a private GitHub repo is not automatically safe** —
   it changes where this material can be copied to. Andrew's call, not Claude's.

@@ -7,7 +7,7 @@
 
 # **BFS BLOCK CATALOGUE — THE HOUSE PATTERNS**
 
-*v1.0 — 2026-08-31. Extracted by measurement from BFS X JBL and Entrepreneurship: Business Launchpad, both live. These are not Google's presets. They are the patterns Andrew builds, named so they can be referenced, reproduced and verified. Names are proposed and are Andrew's to confirm.*
+*v1.0 — 2026-08-31. Extracted by measurement from the reference site and Entrepreneurship: Business Launchpad, both live. These are not Google's presets. They are the patterns Andrew builds, named so they can be referenced, reproduced and verified. Names are proposed and are Andrew's to confirm.*
 
 ## **THE HOUSE RULE — HEADING ABOVE THE IMAGE**
 
@@ -60,7 +60,7 @@ The register of assigned names lives in this document. Check it before assigning
 ## **BFS-01 · MAINE — TITLE STACK**
 
 One column, two text cells stacked. Site title then subtitle.  
-Observed: JBL Home s1 (y \-163, \-98) · BLP Home s1  
+Observed: the reference site Home s1 (y \-163, \-98) · BLP Home s1  
 Cells: 2 · Fill order: title, subtitle · Verified: NO
 
 ## **BFS-02 · OHIO — SECTION HEADING**
@@ -72,27 +72,27 @@ Cells: 1 · Verified: NO
 ## **BFS-03 · NEVADA — RHYTHM SPACER**
 
 One spacer. Used in runs of two to four between major groups.  
-Observed: JBL s2-s5 (four consecutive), s9-s11, s17-s18 · BLP s14-s15  
+Observed: the reference site s2-s5 (four consecutive), s9-s11, s17-s18 · BLP s14-s15  
 Cells: 1 · Verified: YES — placed and read back 2026-08-30  
-Note: roughly a quarter of all blocks on JBL Home. Omitting these produces a page that is structurally correct and visually wrong. Spacers are content.
+Note: roughly a quarter of all blocks on the reference site Home. Omitting these produces a page that is structurally correct and visually wrong. Spacers are content.
 
 ## **BFS-04 · TEXAS — FULL BLEED IMAGE**
 
 One column, one image, full content width (1154px on desktop).  
-Observed: JBL s8 · BLP s5  
+Observed: the reference site s8 · BLP s5  
 Cells: 1 · Verified: PARTIAL — Drive and Upload paths proven; placement not isolated
 
 ## **BFS-05 · OREGON — MEDIA LEFT, TEXT RIGHT**
 
 Two columns. Media occupies the left; heading and body stack on the right.  
-Observed: JBL s12 (Drive PDF embed \+ "A Legacy at a Crossroads" \+ body) · BLP s7 (image \+ "The Overview & Objectives" \+ body)  
+Observed: the reference site s12 (Drive PDF embed \+ "A Legacy at a Crossroads" \+ body) · BLP s7 (image \+ "The Overview & Objectives" \+ body)  
 Cells: 3 · Columns: media x121, text x545 · Fill order: media, heading, body  
 Verified: NO — the closest stock preset is "Image and caption", which is not this shape
 
 ## **BFS-06 · UTAH — TWO UP FEATURE PAIR *(the signature)***
 
 Two columns. Each column: heading, image, body — in that vertical order.  
-Observed: JBL s14 ("The Project" / "The Goal") and s16 ("Development" / "Deliverables")  
+Observed: the reference site s14 ("The Project" / "The Goal") and s16 ("Development" / "Deliverables")  
 Cells: 6 · Columns: x121, x630 · Image height approx 270px  
 Vertical order per column: heading (y2583), image (y2647), body (y2917)  
 Fill order: c1 heading, c2 heading, c1 image, c2 image, c1 body, c2 body — ROW MAJOR, because the cells are laid out in rows of two  
@@ -119,9 +119,9 @@ Note: the unevenness is real content, not a defect. Do not pad it for symmetry.
 ## **BFS-09 · GEORGIA — ACTION BUTTON**
 
 One button, centred, standing alone between sections.  
-Observed: JBL s19 "Book Your Next Meeting" · BLP s4, s11, s19 (Zoom links)  
+Observed: the reference site s19 "Book Your Next Meeting" · BLP s4, s11, s19 (Zoom links)  
 Cells: 1 · Verified: NO  
-Note: on JBL it sits directly above the calendar embed. Button then embed is a pair.
+Note: on the reference site it sits directly above the calendar embed. Button then embed is a pair.
 
 ## **BFS-10 · VERMONT — CONTACT ROW**
 
@@ -132,13 +132,13 @@ Cells: 3 · Verified: NO
 ## **BFS-11 · ALASKA — DRIVE DOCUMENT EMBED**
 
 A Drive file rendered inline, usually as the left media of OREGON.  
-Observed: JBL s12 — Joe\_Brazil\_Legacy\_Securing\_History-merged.pdf  
+Observed: the reference site s12 — Joe\_Brazil\_Legacy\_Securing\_History-merged.pdf  
 Verified: NO — embed target resolves from the iframe src
 
 ## **BFS-12 · HAWAII — CUSTOM EMBED**
 
-Third-party embed by code. On JBL, a Google Calendar appointment scheduler.  
-Observed: JBL s20, paired beneath GEORGIA  
+Third-party embed by code. On the reference site, a Google Calendar appointment scheduler.  
+Observed: the reference site s20, paired beneath GEORGIA  
 Verified: YES as a mechanism (RCRC dashboard)  
 **Retrieval note:** Sites wraps custom embeds in a cross-origin gstatic shim, so the iframe src reveals nothing. The original embed code survives on a **data-code** attribute on the cell. Without reading that attribute the block cannot be catalogued.
 
@@ -166,7 +166,7 @@ the house order (heading above image) is done by hand afterwards, when it matter
 WHAT WAS TESTED, AND WHAT IT SHOWED
 
 Two-column grid from the preset — WORKS. One menu click. Columns land at x=121 and x=630,  
-width 484 each, which are JBL's own column positions. No dragging.  
+width 484 each, which are the reference site's own column positions. No dragging.  
 Vertical stacking by insert order — WORKS. Text box then image places the image below the  
 heading. Order follows sequence, not coordinates.  
 Filling cells by DOM index — WORKS. Both columns fill correctly, row-major.  
