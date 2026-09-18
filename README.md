@@ -149,6 +149,11 @@ These are measured, not assumed. The full list is in `FIRST_TRY_CHECKLIST.md`.
 
 ## Requirements
 
+**Start here:** `python3 scripts/doctor.py` — checks everything and prints the
+fix for whatever is missing.
+
+## Requirements
+
 See **[`SETUP.md`](SETUP.md)** for the full procedure — creating your own service
 account, sharing folders with it, and launching Chrome correctly.
 

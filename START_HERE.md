@@ -12,6 +12,19 @@ catalogues are projections.* They are linked below instead.
 
 ## First run on this machine?
 
+**Run the preflight first — it tells you what is missing and how to fix each thing:**
+
+```bash
+python3 scripts/doctor.py
+```
+
+It checks Python, the packages, the Claude Code CLI, your service-account key,
+whether the Drive AND Sheets APIs are enabled, whether the folder and catalogue
+are actually shared with the service account, and Chrome. Read-only. Every
+failure prints the exact command or click that fixes it.
+
+## First run on this machine?
+
 **[`SETUP.md`](SETUP.md)** — credentials, dependencies, Chrome. Do that first;
 nothing below works without it. `CLAUDE.md` loads automatically in Claude Code
 and carries the rules an agent must not drift from.
