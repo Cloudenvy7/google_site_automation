@@ -15,14 +15,16 @@ import time
 
 import sites_automation as S
 import drive_upload as D
+import config
 
 
 def img_count(ws):
     return S.eval_js(ws, "document.querySelectorAll('img').length") or 0
 
 
-def open_page(site, page_label="test."):
-    ws = S.open_tab(f"https://sites.google.com/u/1/d/{site}/edit")
+def open_page(site, page_label="test.", u=None):
+    u = config.u_index(u, site)
+    ws = S.open_tab(f"https://sites.google.com/u/{u}/d/{config.site_id(site)}/edit")
     for _ in range(50):
         time.sleep(1)
         if S.find_control(ws, "Publish", exact=True):

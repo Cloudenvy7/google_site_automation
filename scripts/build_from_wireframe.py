@@ -13,9 +13,19 @@ Two guards exist because their absence destroyed a finished page on 2026-08-30:
    Home -- and rebuilt Team's content onto it. A destructive step must confirm
    its target, not trust the click that preceded it. The URL carries the page
    id; read it back and refuse if it is not the intended one.
+
+usage:
+  build_from_wireframe.py <page_label> <expected_page_id|-> <rows.json> <site> [--u N]
+
+  <site> is the Site's id or its editor URL (sites.google.com/u/<N>/d/<id>/edit).
+  If omitted, ADVISOR_SITE_ID is used; with neither, it refuses rather than guess.
+  --u N picks the signed-in Google account; otherwise the /u/<N>/ in a pasted
+  URL, then ADVISOR_U_INDEX, then 0. Naming the Site in the command also lets
+  the build hook check it against the preflight stamp.
 """
 
 import sys, time, json
+import config
 import chrome_automation as C
 import sites_automation as S
 import wireframe_build as W
@@ -73,14 +83,29 @@ def build(ws, rows, label, expect_id):
 
 
 def main():
-    label, expect_id, path = sys.argv[1], sys.argv[2], sys.argv[3]
+    args = sys.argv[1:]
+    u_arg = None
+    if "--u" in args:
+        i = args.index("--u")
+        u_arg = args[i + 1] if i + 1 < len(args) else ""
+        del args[i:i + 2]
+    if len(args) < 3:
+        print(__doc__); raise SystemExit(1)
+    label, expect_id, path = args[0], args[1], args[2]
+    site_arg = args[3] if len(args) > 3 else None
+    try:
+        site = config.site_id(site_arg)
+        u = config.u_index(u_arg, site_arg or None)
+    except config.ConfigError as e:
+        print(f"\n  REFUSED -- {e}\n  Nothing was modified.")
+        raise SystemExit(2)
     rows = json.load(open(path))
-    site = open("/tmp/hl_site.txt").read().strip()
+    print(f"  site {site}  (account /u/{u}/)")
     ws, _ = S.attach()
     try:
         H.guard_2_viewport(ws)
         C.send_ws_cmd(ws, "Page.navigate",
-                      {"url": f"https://sites.google.com/u/1/d/{site}/edit"})
+                      {"url": f"https://sites.google.com/u/{u}/d/{site}/edit"})
         for _ in range(60):
             time.sleep(1)
             if S.find_control(ws, "Publish", exact=True):

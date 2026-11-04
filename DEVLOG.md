@@ -24,6 +24,36 @@ than no log because it still reads as authoritative.
 
 ________________
 
+## 2026-11-04 — The build named a Site that existed only on one machine
+
+Author: Claude Code + Andrew Powers. Andrew, before a client build session:
+*"fix the build script lines so the site id can be something given that way the
+user can direct them to [a] specific google site"*.
+
+`build_from_wireframe.py`, the door the hook allows, read its target Site from
+`/tmp/hl_site.txt` and opened the editor at `/u/1/`. The file existed only where
+the code was written, so on a client's Mac the build stopped at that line. `/u/1/`
+is the *second* signed-in Google account, so on a browser signed in once it opens
+the wrong account. `build_blocks.py` and `build_workshops.py` carried the same
+`/u/1/`. The 2026-09-13 portability pass fixed the indexer's paths and missed
+these, because the build had never run on a second machine.
+
+Now `config.site_id()` takes the Site from the command (an id or a pasted editor
+URL), then `ADVISOR_SITE_ID`, and refuses with no default. `config.u_index()`
+takes `--u N`, then the `/u/N/` in a pasted URL, then `ADVISOR_U_INDEX`, then 0.
+Naming the Site in the command also lets the hook check it against the
+preflight stamp, which it could not do when the target lived in a temp file.
+
+```
+build_from_wireframe.py <page_label> <expected_page_id|-> <rows.json> <site id or editor URL> [--u N]
+```
+
+Verified: compiles; the id, URL, env and refusal paths of both lookups; a run with
+no Site refuses before touching Chrome; `evals/run.sh` ALL PASS. **Not verified on
+a live Site from a client machine.** Not yet mirrored into `advisor-os`.
+
+________________
+
 ## 2026-09-13 (later) — Auditing what a session claimed, and the Drive upload that was never broken the way we said
 
 Author: Claude Code (claude-opus-5) + Andrew Powers. Two things, connected by

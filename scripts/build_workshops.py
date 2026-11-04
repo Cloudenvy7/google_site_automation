@@ -246,7 +246,7 @@ def page_blocks(ws):
 
 
 def main(sheet_id, site_id, page_id, img_dir, limit=None):
-    ws, _ = S.attach(f"https://sites.google.com/u/1/d/{site_id}/p/{page_id}/edit")
+    ws, _ = S.attach(f"https://sites.google.com/u/{config.u_index()}/d/{site_id}/p/{page_id}/edit")
     for _ in range(60):
         time.sleep(1)
         if S.find_control(ws, "Publish", exact=True):
@@ -342,7 +342,7 @@ def probe(site_id, page_id, cell_index=None):
     """Report what the reconciler sees, and what sits near a media cell.
     Diagnostics live in the file that owns the problem -- an inline probe that
     names a site module is refused by the hook, and rightly."""
-    ws, _ = S.attach(f"https://sites.google.com/u/1/d/{site_id}/p/{page_id}/edit")
+    ws, _ = S.attach(f"https://sites.google.com/u/{config.u_index()}/d/{site_id}/p/{page_id}/edit")
     for _ in range(60):
         time.sleep(1)
         if S.find_control(ws, "Publish", exact=True):
