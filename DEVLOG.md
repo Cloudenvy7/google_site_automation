@@ -24,6 +24,34 @@ than no log because it still reads as authoritative.
 
 ________________
 
+## 2026-11-05 — The build could find only one page by its label
+
+**What happened.** The first client build (a nonprofit's finance Site, seven
+pages) built Home cleanly and then refused twice on the second page. GUARD 1
+did its job: the page label was NOT_FOUND after the Pages click, so nothing was
+cleared. The read-only survey, on the same editor, listed all seven labels.
+Raising the control probe from 250 to 400 did not help and was reverted. Labels
+had already cost one refused run that day, because the survey prints them with
+the trailing period stripped and the door needs the exact aria-label.
+
+**What changed.** `build_from_wireframe.py` now takes the page's id, or the
+page's editor URL, as its first argument, and opens
+`/u/<N>/d/<site>/p/<page id>/edit` directly. There is no panel click to miss.
+GUARD 1 then reads the id back from the live URL and refuses if it is not the
+one asked for. A page URL for a different Site is refused before anything
+opens. A label still works the old way, for Home, whose editor URL may carry no
+`/p/` at all.
+
+**Why the id.** The person already pastes each page's URL to confirm it, and
+the id is what GUARD 1 checks anyway. Matching a label was an indirect way of
+reaching a value already in hand.
+
+**Not verified live.** Tested offline with the browser modules stubbed (id,
+URL, label, wrong-Site URL, URL with no page, editor landing on another page)
+and the eval suite passes. The first live run is the client's next session.
+Why the panel showed only Home is still not known. Not yet mirrored into
+advisor-os.
+
 ## 2026-11-04 — The build named a Site that existed only on one machine
 
 Author: Claude Code + Andrew Powers. Andrew, before a client build session:
